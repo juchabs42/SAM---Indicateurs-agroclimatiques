@@ -24,9 +24,11 @@ DONNÉES UTILISÉES
 Le prototype interroge l’API Open-Meteo Forecast avec :
 - temperature_2m ;
 - relative_humidity_2m ;
-- vapour_pressure_deficit ;
-- precipitation ;
-- et0_fao_evapotranspiration.
+- precipitation en horaire ;
+- precipitation_sum en quotidien ;
+- et0_fao_evapotranspiration en quotidien.
+
+Le VPD est recalculé dans le navigateur à partir de la température et de l’humidité relative.
 
 Il demande :
 - 30 jours passés ;

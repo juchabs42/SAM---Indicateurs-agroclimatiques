@@ -86,23 +86,14 @@ function simulateSam(hourly) {
   });
 }
 
-async function fetchWeather(latitude, longitude) {
-  const params = new URLSearchParams({
-    latitude: latitude.toFixed(4),
-    longitude: longitude.toFixed(4),
-    hourly: [
-      "temperature_2m",
-      "relative_humidity_2m",
-      "vapour_pressure_deficit",
-      "precipitation",
-      "et0_fao_evapotranspiration"
-    ].join(","),
-    timezone: "auto",
-    past_days: "30",
-    forecast_days: "7"
-  });
+function calculateVpd(temperature, humidity) {
+  if (!Number.isFinite(temperature) || !Number.isFinite(humidity)) return 0;
+  const saturationPressure = 0.6108 * Math.exp((17.27 * temperature) / (temperature + 237.3));
+  return Math.max(0, saturationPressure * (1 - humidity / 100));
+}
 
-  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+async function fetchJson(url) {
+  const response = await fetch(url);
   if (!response.ok) {
     let details = "";
     try {
@@ -113,19 +104,64 @@ async function fetchWeather(latitude, longitude) {
     }
     throw new Error(`Erreur Open-Meteo (${response.status})${details}`);
   }
+  return response.json();
+}
 
-  const data = await response.json();
-  const hourly = data.hourly.time.map((time, index) => ({
-    time,
-    temperature: data.hourly.temperature_2m[index],
-    humidity: data.hourly.relative_humidity_2m[index],
-    vpd: data.hourly.vapour_pressure_deficit[index],
-    precipitation: data.hourly.precipitation[index],
-    et0: data.hourly.et0_fao_evapotranspiration[index]
-  }));
+async function fetchWeather(latitude, longitude) {
+  /*
+   * Appel volontairement simplifié :
+   * - le VPD est recalculé localement à partir de T et HR ;
+   * - l'ET0 est récupérée en valeur quotidienne ;
+   * - cela évite les erreurs 400 liées à certaines combinaisons de variables horaires.
+   */
+  const params = new URLSearchParams({
+    latitude: latitude.toFixed(4),
+    longitude: longitude.toFixed(4),
+    hourly: [
+      "temperature_2m",
+      "relative_humidity_2m",
+      "precipitation"
+    ].join(","),
+    daily: [
+      "precipitation_sum",
+      "et0_fao_evapotranspiration"
+    ].join(","),
+    timezone: "auto",
+    past_days: "30",
+    forecast_days: "7"
+  });
+
+  const data = await fetchJson(`https://api.open-meteo.com/v1/forecast?${params}`);
+
+  if (!data.hourly || !data.hourly.time) {
+    throw new Error("réponse horaire absente");
+  }
+
+  const hourly = data.hourly.time.map((time, index) => {
+    const temperature = Number(data.hourly.temperature_2m[index]);
+    const humidity = Number(data.hourly.relative_humidity_2m[index]);
+
+    return {
+      time,
+      temperature,
+      humidity,
+      vpd: calculateVpd(temperature, humidity),
+      precipitation: Number(data.hourly.precipitation[index] || 0),
+      et0: 0
+    };
+  });
+
+  const daily = data.daily && data.daily.time
+    ? data.daily.time.map((date, index) => ({
+        date,
+        rain: Number(data.daily.precipitation_sum[index] || 0),
+        et0: Number(data.daily.et0_fao_evapotranspiration[index] || 0)
+      }))
+    : aggregateDaily(hourly);
 
   return {
     hourly: simulateSam(hourly),
+    daily,
     timezone: data.timezone,
     elevation: data.elevation
   };
@@ -224,7 +260,7 @@ async function loadLocation(latitude, longitude, label) {
     state.longitude = longitude;
     state.label = label;
     state.hourly = result.hourly;
-    state.daily = aggregateDaily(result.hourly);
+    state.daily = result.daily || aggregateDaily(result.hourly);
 
     document.getElementById("locationTitle").textContent = label;
     document.getElementById("locationDetails").textContent =
