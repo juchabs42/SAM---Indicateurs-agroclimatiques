@@ -95,7 +95,7 @@ async function fetchWeather(latitude, longitude) {
       "relative_humidity_2m",
       "vapour_pressure_deficit",
       "precipitation",
-      "reference_evapotranspiration"
+      "et0_fao_evapotranspiration"
     ].join(","),
     timezone: "auto",
     past_days: "30",
@@ -103,7 +103,16 @@ async function fetchWeather(latitude, longitude) {
   });
 
   const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
-  if (!response.ok) throw new Error(`Erreur Open-Meteo (${response.status})`);
+  if (!response.ok) {
+    let details = "";
+    try {
+      const errorData = await response.json();
+      details = errorData.reason ? ` : ${errorData.reason}` : "";
+    } catch {
+      details = "";
+    }
+    throw new Error(`Erreur Open-Meteo (${response.status})${details}`);
+  }
 
   const data = await response.json();
   const hourly = data.hourly.time.map((time, index) => ({
@@ -112,7 +121,7 @@ async function fetchWeather(latitude, longitude) {
     humidity: data.hourly.relative_humidity_2m[index],
     vpd: data.hourly.vapour_pressure_deficit[index],
     precipitation: data.hourly.precipitation[index],
-    et0: data.hourly.reference_evapotranspiration[index]
+    et0: data.hourly.et0_fao_evapotranspiration[index]
   }));
 
   return {

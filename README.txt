@@ -26,7 +26,7 @@ Le prototype interroge l’API Open-Meteo Forecast avec :
 - relative_humidity_2m ;
 - vapour_pressure_deficit ;
 - precipitation ;
-- reference_evapotranspiration.
+- et0_fao_evapotranspiration.
 
 Il demande :
 - 30 jours passés ;
