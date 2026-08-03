@@ -70,6 +70,6 @@ Les bandes DPV sont désactivées par défaut et activées uniquement sur :
 - le graphique DPV détaillé.
 Tous les autres graphiques restent sur fond blanc gradué.
 
-MISE À JOUR V2.5
+MISE À JOUR V2.6
 ----------------
-Suppression de la section « Lecture des bandes de DPV » sans modifier les autres fonctions JavaScript.
+La section « Lecture des bandes de DPV » est supprimée. Le graphique des heures cumulées occupe toute la largeur.
