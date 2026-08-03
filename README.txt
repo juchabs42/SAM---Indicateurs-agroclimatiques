@@ -16,7 +16,7 @@ FONCTIONNALITÉS
 - fenêtre d’irrigation par créneaux de 3 h pour le lendemain ;
 - heures > 35 °C ;
 - nuits tropicales ;
-- heures potentiellement favorables à la photosynthèse ;
+- heures de conditions climatiques favorables ;
 - heures humides estimées ;
 - ET0 et déficit climatique historique.
 
