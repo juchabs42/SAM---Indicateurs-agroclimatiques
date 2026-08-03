@@ -81,13 +81,21 @@ function renderDashboard(){
  const now2=new Date(),tomorrow2=new Date(now2);tomorrow2.setDate(now2.getDate()+1);const target2=`${tomorrow2.getFullYear()}-${String(tomorrow2.getMonth()+1).padStart(2,"0")}-${String(tomorrow2.getDate()).padStart(2,"0")}`,tomorrowRows=state.hourly.filter(x=>x.time.startsWith(target2)),blocks2=[];for(let s=0;s<24;s+=3){const p=tomorrowRows.filter(x=>{const h=new Date(x.time).getHours();return h>=s&&h<s+3});if(!p.length)continue;const avg=k=>p.reduce((a,x)=>a+x[k],0)/p.length,o={start:s,end:s+3,vpd:avg("vpd"),wind:avg("wind"),temperature:avg("temperature"),rain:p.reduce((a,x)=>a+x.rain,0)};o.q=irrigationQuality(o);blocks2.push(o)}blocks2.sort((a,b)=>b.q.score-a.q.score);const best=blocks2[0];bestWindow.textContent=best?`${String(best.start).padStart(2,"0")} h – ${String(best.end).padStart(2,"0")} h`:"—";bestWindowDetails.textContent=best?`${best.q.label} · DPV ${fmt(best.vpd)} kPa · vent ${fmt(best.wind)} km/h`:"Prévision indisponible";
  const deficit=computeDeficit(pastDays(30));dashboardDeficit.textContent=`${fmt(deficit.at(-1)?.cumulative||0)} mm`;
 
- destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:"rgba(127,29,45,.72)",borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
- destroy("dashVpd");state.charts.dashVpd=new Chart(dashboardVpdChart,{type:"line",data:{labels:next48.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:next48.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true},vpdLegend:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}})
+ destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
+?"rgba(72,149,239,.75)"
+:d.score<50
+?"rgba(82,183,136,.75)"
+:d.score<75
+?"rgba(248,196,62,.82)"
+:d.score<90
+?"rgba(244,140,54,.82)"
+:"rgba(83,52,131,.82)"),borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
+ destroy("dashVpd");state.charts.dashVpd=new Chart(dashboardVpdChart,{type:"line",data:{labels:next48.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:next48.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}})
 }
 
 function renderVpd(){
  const hours=Number(vpdPeriod.value),rows=futureHours(hours);if(!rows.length)return;
- destroy("vpd");state.charts.vpd=new Chart(vpdChart,{type:"line",data:{labels:rows.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:rows.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true},vpdLegend:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}});
+ destroy("vpd");state.charts.vpd=new Chart(vpdChart,{type:"line",data:{labels:rows.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:rows.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}});
  const thresholds=[1.5,2.5,3.5,4.5];
  destroy("threshold");state.charts.threshold=new Chart(thresholdChart,{type:"bar",data:{labels:["> 1,5 kPa — régulation","> 2,5 kPa — contrainte","> 3,5 kPa — stress sévère","> 4,5 kPa — stress extrême"],datasets:[{label:`Heures sur ${hours} h`,data:thresholds.map(t=>rows.filter(x=>x.vpd>t).length),backgroundColor:["rgba(248,196,62,.8)","rgba(244,140,54,.8)","rgba(214,69,65,.8)","rgba(83,52,131,.8)"],borderRadius:5}]},options:{...chartBase,indexAxis:"y",scales:{x:{beginAtZero:true,title:{display:true,text:"Heures"}},y:{grid:{display:false}}}}});
   vpdReading.innerHTML=`<div class="vpd-legend-inline"><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(72,149,239,.55)"></span>0–1,0 kPa · Faible demande</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(82,183,136,.55)"></span>1,0–1,5 kPa · Conditions favorables</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(248,196,62,.65)"></span>1,5–2,5 kPa · Régulation stomatique</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(244,140,54,.65)"></span>2,5–3,5 kPa · Contrainte élevée</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(214,69,65,.60)"></span>3,5–4,5 kPa · Stress sévère</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(83,52,131,.60)"></span>&gt; 4,5 kPa · Stress extrême</span></div>`
@@ -95,7 +103,15 @@ function renderVpd(){
 
 function renderScore(){
  const fd=forecastDays().map(scoreDay);
- destroy("score");state.charts.score=new Chart(scoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:"rgba(127,29,45,.72)",borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
+ destroy("score");state.charts.score=new Chart(scoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
+?"rgba(72,149,239,.75)"
+:d.score<50
+?"rgba(82,183,136,.75)"
+:d.score<75
+?"rgba(248,196,62,.82)"
+:d.score<90
+?"rgba(244,140,54,.82)"
+:"rgba(83,52,131,.82)"),borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
  scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
 }
 

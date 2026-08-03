@@ -54,3 +54,10 @@ IMPORTANT
 L’indice de contrainte, la fenêtre d’irrigation, l’humectation estimée et les heures
 favorables sont des règles de prototype. Elles doivent être validées par SudExpé
 avant utilisation opérationnelle ou diffusion comme conseil agronomique.
+
+MISE À JOUR V2.2
+----------------
+- Les deux graphiques DPV conservent les bandes colorées.
+- La légende des bandes est affichée sous les graphiques, hors de la zone de tracé.
+- Tous les autres graphiques utilisent un fond blanc gradué, sans bandes DPV.
+- Les graphiques de l’indice climatique utilisent à nouveau une couleur selon le niveau de l’indice.
