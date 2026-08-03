@@ -3,261 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Prototype Sud Agro Météo : indicateurs agroclimatiques prévisionnels.">
-  <meta name="theme-color" content="#7f1d2d">
-  <title>Indicateurs agroclimatiques V2 — Sud Agro Météo</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <meta name="theme-color" content="#9f0010">
+  <title>SAM Irrigation — Indicateurs agroclimatiques</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
+  <header class="app-header">
     <div class="brand">
-      <div class="brand-mark">S</div>
-      <div>
-        <p class="brand-kicker">Sud Agro Météo</p>
-        <h1>Indicateurs agroclimatiques V2</h1>
-      </div>
+      <span class="leaf">◆</span>
+      <span>SAM IRRIGATION</span>
     </div>
-
-    <button id="menuButton" class="menu-button" type="button" aria-expanded="false">Menu</button>
-
-    <nav id="mainNav" class="main-nav">
-      <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
-      <button class="nav-link" data-section="vpd">DPV</button>
-      <button class="nav-link" data-section="contrainte">Indice climatique</button>
-      <button class="nav-link" data-section="irrigation">Irrigation</button>
-      <button class="nav-link" data-section="autres">Autres indicateurs</button>
-      <button class="nav-link" data-section="deficit">Déficit climatique</button>
-      <button class="nav-link" data-section="methodes">Méthodes</button>
-    </nav>
+    <h1>Suivi des indicateurs agroclimatiques prévisionnels</h1>
+    <div class="period-badge">▣&nbsp;&nbsp;7 prochains jours</div>
   </header>
 
-  <main>
-    <section class="location-panel">
-      <div>
-        <p class="eyebrow">Localisation</p>
-        <h2 id="locationTitle">Position de démonstration</h2>
-        <p id="locationDetails">Les données sont récupérées automatiquement depuis Open-Meteo.</p>
+  <section class="meta-bar">
+    <div class="period-selector">
+      <span class="meta-label">PÉRIODE</span>
+      <div class="date-range">
+        <span id="periodStart">—</span>
+        <span>→</span>
+        <span id="periodEnd">—</span>
+        <span>▣</span>
       </div>
-      <div class="location-actions">
-        <button id="geolocateButton" class="primary-button">Trouver ma position</button>
-        <button id="manualButton" class="secondary-button">Saisir des coordonnées</button>
-      </div>
-      <form id="manualLocationForm" class="manual-form hidden">
-        <label>Latitude<input id="latitudeInput" type="number" step="0.0001" value="43.6077" required></label>
-        <label>Longitude<input id="longitudeInput" type="number" step="0.0001" value="4.0122" required></label>
-        <button class="primary-button" type="submit">Charger</button>
-      </form>
-      <div id="locationMessage" class="status-message"></div>
-    </section>
-
-    <div id="loadingPanel" class="loading-panel hidden">
-      <span class="spinner"></span>Chargement des données météorologiques…
     </div>
 
-    <section id="dashboard" class="page-section active">
-      <div class="hero">
-        <div>
-          <p class="eyebrow">Prévision agroclimatique</p>
-          <h2>Suivi des indicateurs agroclimatiques prévisionnels</h2>
-          <p>Consultez en un coup d’œil les conditions prévues pour les 7 prochains jours afin d’anticiper les périodes de contrainte et organiser les interventions.</p>
-        </div>
-        <div class="hero-badge"><span class="status-dot"></span>Prototype V2</div>
-      </div>
+    <div class="meta-separator"></div>
 
-      <div class="summary-grid">
-        <article class="summary-card score-card">
-          <p>Indice de contrainte aujourd’hui</p>
-          <strong id="todayScore">—</strong>
-          <span id="todayScoreLabel">—</span>
-        </article>
-        <article class="summary-card">
-          <p>DPV maximal aujourd’hui</p>
-          <strong id="todayMaxVpd">—</strong>
-          <span id="todayVpdLabel">—</span>
-        </article>
-        <article class="summary-card">
-          <p>Meilleure fenêtre d’irrigation</p>
-          <strong id="bestWindow">—</strong>
-          <span id="bestWindowDetails">—</span>
-        </article>
-        <article class="summary-card">
-          <p>Déficit climatique sur 30 jours</p>
-          <strong id="dashboardDeficit">—</strong>
-          <span>ET₀ − pluie</span>
-        </article>
-      </div>
+    <button id="locateBtn" class="location-control" type="button" title="Utiliser ma position">
+      <span class="pin">●</span>
+      <span>
+        <span class="meta-label">LOCALISATION</span>
+        <strong id="locationName">Quissac (30)</strong>
+      </span>
+    </button>
 
-      <div class="dashboard-grid">
-        <article class="panel">
-          <div class="panel-header"><div><p class="panel-kicker">7 prochains jours</p><h3>Indice de contrainte climatique</h3></div></div>
-          <div class="chart-wrap"><canvas id="dashboardScoreChart"></canvas></div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><p class="panel-kicker">48 prochaines heures</p><h3>DPV horaire</h3></div></div>
-          <div class="chart-wrap"><canvas id="dashboardVpdChart"></canvas></div>
-          <div class="vpd-legend-inline" aria-label="Légende des bandes de DPV">
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-blue"></span>0–1,0 kPa · Faible demande</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>1,0–1,5 kPa · Conditions favorables</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,5–2,5 kPa · Régulation stomatique</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-orange"></span>2,5–3,5 kPa · Contrainte élevée</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-red"></span>3,5–4,5 kPa · Stress sévère</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-purple"></span>&gt; 4,5 kPa · Stress extrême</span>
-          </div>
-        </article>
-      </div>
-    </section>
+    <div class="meta-item">
+      <span class="meta-label">ALTITUDE</span>
+      <strong id="altitudeValue">—</strong>
+    </div>
 
-    <section id="vpd" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Demande atmosphérique</p>
-          <h2>DPV horaire et charge cumulée</h2>
-          <p>Les bandes suivent les seuils définis pour le prototype SudExpé.</p>
+    <div class="meta-item">
+      <span class="meta-label">LATITUDE</span>
+      <strong id="latitudeValue">—</strong>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">LONGITUDE</span>
+      <strong id="longitudeValue">—</strong>
+    </div>
+
+    <div class="meta-item">
+      <span class="meta-label">DERNIÈRE MISE À JOUR</span>
+      <strong id="updatedValue">—</strong>
+    </div>
+  </section>
+
+  <section id="manualLocation" class="manual-location hidden">
+    <label>Latitude<input id="latInput" type="number" step="0.0001" value="43.9090"></label>
+    <label>Longitude<input id="lonInput" type="number" step="0.0001" value="4.0000"></label>
+    <button id="loadCoordsBtn" type="button">Charger</button>
+  </section>
+
+  <main class="dashboard">
+    <article class="card deficit-card">
+      <div class="card-title">Déficit climatique (ET₀ − la pluie)</div>
+      <div class="card-subtitle">Cumul quotidien (mm)</div>
+      <div class="card-grid">
+        <div class="chart-box"><canvas id="deficitChart"></canvas></div>
+        <div class="summary-panel">
+          <strong>7 prochains jours</strong>
+          <div><span>ET₀ cumulée</span><b id="et0Total" class="blue">—</b></div>
+          <div><span>Pluie cumulée</span><b id="rainTotal" class="green">—</b></div>
+          <div><span>Déficit (ET₀ − pluie)</span><b id="deficitTotal" class="red">—</b></div>
         </div>
       </div>
+    </article>
 
-      <div class="controls">
-        <label>Période
-          <select id="vpdPeriod">
-            <option value="24">24 heures</option>
-            <option value="48" selected>48 heures</option>
-            <option value="72">72 heures</option>
-            <option value="168">7 jours</option>
-          </select>
-        </label>
-      </div>
+    <article class="card">
+      <div class="card-title">DPV de l’air (kPa)</div>
+      <div class="card-subtitle">Prévision horaire</div>
+      <div class="chart-box"><canvas id="vpdChart"></canvas></div>
+    </article>
 
-      <article class="panel">
-        <div class="chart-wrap large"><canvas id="vpdChart"></canvas></div>
-        <div class="vpd-legend-inline" aria-label="Légende des bandes de DPV">
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-blue"></span>0–1,0 kPa · Faible demande</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>1,0–1,5 kPa · Conditions favorables</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,5–2,5 kPa · Régulation stomatique</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-orange"></span>2,5–3,5 kPa · Contrainte élevée</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-red"></span>3,5–4,5 kPa · Stress sévère</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-purple"></span>&gt; 4,5 kPa · Stress extrême</span>
-        </div>
-      </article>
+    <article class="card">
+      <div class="card-title">Heures cumulées au-dessus des seuils DPV</div>
+      <div class="card-subtitle">Cumul sur la période (h)</div>
+      <div class="chart-box"><canvas id="thresholdChart"></canvas></div>
+    </article>
 
-      <div class="two-columns">
-        <article class="panel">
-          <h3>Heures cumulées au-dessus des seuils</h3>
-          <div class="chart-wrap"><canvas id="thresholdChart"></canvas></div>
-        </article>
-        <article class="panel">
-          <h3>Lecture des bandes de DPV</h3>
-          <div id="vpdReading" class="reading-card"></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="contrainte" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Indice synthétique</p>
-          <h2>Indice de contrainte climatique journalier</h2>
-          <p>Score de 0 à 100 combinant DPV, durée de contrainte, température maximale et ET₀.</p>
+    <article class="card wide-card">
+      <div class="card-title">Indice de contrainte climatique journalier</div>
+      <div class="card-subtitle">Prévision sur 7 jours</div>
+      <div class="card-grid score-layout">
+        <div class="chart-box"><canvas id="scoreChart"></canvas></div>
+        <div class="index-legend">
+          <strong>Interprétation de l’indice</strong>
+          <span><i class="dot c1"></i>0 – 20 <em>Très faible</em></span>
+          <span><i class="dot c2"></i>20 – 40 <em>Faible</em></span>
+          <span><i class="dot c3"></i>40 – 60 <em>Modéré</em></span>
+          <span><i class="dot c4"></i>60 – 80 <em>Élevé</em></span>
+          <span><i class="dot c5"></i>80 – 100 <em>Très élevé</em></span>
         </div>
       </div>
+    </article>
 
-      <div class="score-legend">
-        <span class="score-low">0–24 Faible</span>
-        <span class="score-moderate">25–49 Modérée</span>
-        <span class="score-high">50–74 Élevée</span>
-        <span class="score-severe">75–89 Sévère</span>
-        <span class="score-extreme">90–100 Extrême</span>
-      </div>
+    <article class="card irrigation-card">
+      <div class="card-title">Meilleure période prévisionnelle pour irriguer</div>
+      <div class="card-subtitle" id="irrigationDate">Demain</div>
+      <table class="irrigation-table">
+        <thead><tr><th>Période (3h)</th><th>Conditions d’irrigation</th></tr></thead>
+        <tbody id="irrigationBody"></tbody>
+      </table>
+    </article>
 
-      <article class="panel">
-        <div class="chart-wrap large"><canvas id="scoreChart"></canvas></div>
-      </article>
+    <article class="card">
+      <div class="card-title">Heures chaudes par jour</div>
+      <div class="card-subtitle">Heures prévues avec T° &gt; 35 °C</div>
+      <div class="chart-box"><canvas id="heatChart"></canvas></div>
+    </article>
 
-      <div id="scoreCards" class="forecast-grid"></div>
-    </section>
+    <article class="card">
+      <div class="card-title">Heures humides estimées</div>
+      <div class="card-subtitle">Heures prévues avec HR ≥ 90 %</div>
+      <div class="chart-box"><canvas id="wetChart"></canvas></div>
+    </article>
 
-    <section id="irrigation" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Fenêtres horaires</p>
-          <h2>Meilleures périodes pour irriguer demain</h2>
-          <p>Prévision de demain présentée par créneaux de 3 heures, de 00 h à 24 h.</p>
-        </div>
-      </div>
-      <article class="panel">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Créneau</th><th>Qualité</th><th>DPV moyen</th><th>Vent moyen</th><th>Température moyenne</th><th>Pluie cumulée</th></tr></thead>
-            <tbody id="irrigationTable"></tbody>
-          </table>
-        </div>
-      </article>
-      <div class="warning-box"><strong>À interpréter :</strong> cette fenêtre concerne surtout les pertes atmosphériques et les conditions d’application. Elle ne détermine pas à elle seule la dose d’irrigation.</div>
-    </section>
+    <article class="card">
+      <div class="card-title">Heures favorables par jour</div>
+      <div class="card-subtitle">Heures prévues avec 0,8 ≤ DPV ≤ 1,8 kPa et T° entre 20–30 °C</div>
+      <div class="chart-box"><canvas id="favorableChart"></canvas></div>
+    </article>
 
-    <section id="autres" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Indicateurs complémentaires</p>
-          <h2>Chaleur, nuits chaudes, photosynthèse et humectation</h2>
-        </div>
-      </div>
-
-      <div class="metric-grid">
-        <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
-        <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
-        <article class="metric-card"><p>Heures favorables</p><strong id="photoHours">—</strong><span>Température 18–30 °C, DPV 1–1,5 kPa, rayonnement > 100 W/m²</span></article>
-        <article class="metric-card"><p>Heures humides estimées</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
-      </div>
-
-      <div class="dashboard-grid">
-        <article class="panel"><h3>Heures chaudes par jour</h3><div class="chart-wrap"><canvas id="heatChart"></canvas></div></article>
-        <article class="panel"><h3>Heures humides estimées</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
-      </div>
-      <article class="panel">
-        <h3>Heures favorables par jour</h3>
-        <div class="chart-wrap"><canvas id="photoChart"></canvas></div>
-      </article>
-    </section>
-
-    <section id="deficit" class="page-section">
-      <div class="section-heading">
-        <div><p class="eyebrow">Bilan climatique</p><h2>Déficit climatique cumulé</h2><p>ET₀ − la pluie.</p></div>
-      </div>
-      <div class="controls">
-        <label>Période
-          <select id="deficitPeriod">
-            <option value="7">7 jours</option>
-            <option value="14">14 jours</option>
-            <option value="30" selected>30 jours</option>
-          </select>
-        </label>
-      </div>
-      <div class="metric-grid">
-        <article class="metric-card"><p>ET₀ cumulée</p><strong id="et0Total">—</strong><span>Période sélectionnée</span></article>
-        <article class="metric-card"><p>Pluie cumulée</p><strong id="rainTotal">—</strong><span>100 % prise en compte</span></article>
-        <article class="metric-card"><p>Bilan cumulé</p><strong id="deficitTotal">—</strong><span>ET₀ − pluie</span></article>
-        <article class="metric-card"><p>Variation sur 7 jours</p><strong id="deficitWeekChange">—</strong><span>Évolution récente</span></article>
-      </div>
-      <article class="panel"><div class="chart-wrap large"><canvas id="deficitChart"></canvas></div></article>
-    </section>
-
-    <section id="methodes" class="page-section">
-      <div class="section-heading">
-        <div><p class="eyebrow">Méthodes</p><h2>Définitions du prototype</h2></div>
-      </div>
-      <div class="method-grid">
-        <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
-        <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
-        <article class="method-card"><h3>Heures humides estimées</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
-        <article class="method-card"><h3>Heures favorables</h3><p>Température entre 18 et 30 °C, DPV entre 1 et 1,5 kPa et rayonnement supérieur à 100 W/m².</p></article>
-        <article class="method-card"><h3>Fenêtre d’irrigation</h3><p>Score horaire privilégiant un faible DPV, un vent faible, une température modérée et l’absence de pluie.</p></article>
-      </div>
-      <div class="warning-box"><strong>Prototype :</strong> l’indice de contrainte et les règles associées doivent être validés agronomiquement avant diffusion opérationnelle.</div>
-    </section>
+    <article class="card">
+      <div class="card-title">ET₀ quotidien</div>
+      <div class="card-subtitle">Prévision (mm)</div>
+      <div class="chart-box"><canvas id="et0Chart"></canvas></div>
+    </article>
   </main>
 
-  <footer><p>Prototype Sud Agro Météo — Indicateurs agroclimatiques V2.</p><p>Données Open-Meteo.</p></footer>
+  <footer class="footer-note">
+    <span>●</span>
+    Indicateurs issus des prévisions météo Open-Meteo. À utiliser comme aide à la décision. Les données ne remplacent pas l’observation terrain.
+  </footer>
+
+  <div id="status" class="status"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>

@@ -1,129 +1,143 @@
-const DEFAULT_LOCATION={latitude:43.6077,longitude:4.0122,label:"Bassin de Mauguio — démonstration"};
-const state={hourly:[],daily:[],charts:{},label:""};
+const DEFAULT={lat:43.9090,lon:4.0000,name:"Quissac (30)"};
+const charts={};
 
-const chartBase={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,padding:18}}},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{beginAtZero:true,grid:{color:"rgba(101,114,126,.13)"}}}};
+function fmt(v,d=1){return Number(v).toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function shortDate(s){return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit"}).format(new Date(`${s}T12:00:00`))}
+function fullDate(d){return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}).format(d)}
+function vpd(t,rh){const es=.6108*Math.exp((17.27*t)/(t+237.3));return Math.max(0,es*(1-rh/100))}
+function destroy(name){if(charts[name])charts[name].destroy()}
+function showStatus(text){const el=document.getElementById("status");el.textContent=text;el.style.display="block";setTimeout(()=>el.style.display="none",3500)}
 
-const vpdBandsPlugin={id:"vpdBands",beforeDraw(chart,args,options){if(!options||options.enabled===false||!chart.chartArea)return;const{ctx,chartArea,scales}=chart;const y=scales.y;if(!y)return;const bands=[
-{min:0,max:1,color:"rgba(72,149,239,.28)"},{min:1,max:1.5,color:"rgba(82,183,136,.28)"},{min:1.5,max:2.5,color:"rgba(248,196,62,.32)"},{min:2.5,max:3.5,color:"rgba(244,140,54,.32)"},{min:3.5,max:4.5,color:"rgba(214,69,65,.30)"},{min:4.5,max:Math.max(6,y.max),color:"rgba(83,52,131,.30)"}];ctx.save();bands.forEach(b=>{const top=y.getPixelForValue(Math.min(b.max,y.max));const bottom=y.getPixelForValue(Math.max(b.min,y.min));ctx.fillStyle=b.color;ctx.fillRect(chartArea.left,top,chartArea.right-chartArea.left,bottom-top)});ctx.restore()}};
-Chart.register(vpdBandsPlugin);
-const vpdLegendPlugin={id:"vpdLegend",afterDraw(chart,args,options){if(!options||options.enabled===false||!chart.chartArea)return;const{ctx,chartArea}=chart;const items=[["#4895ef","0–1,0 Faible"],["#52b788","1,0–1,5 Favorable"],["#f8c43e","1,5–2,5 Régulation"],["#f48c36","2,5–3,5 Contrainte"],["#d64541","3,5–4,5 Stress sévère"],["#533483",">4,5 Stress extrême"]];ctx.save();ctx.font="11px sans-serif";let x=chartArea.left,y=chartArea.top+8;items.forEach(([color,label])=>{const w=ctx.measureText(label).width+28;if(x+w>chartArea.right){x=chartArea.left;y+=18}ctx.fillStyle=color;ctx.fillRect(x,y-9,10,10);ctx.fillStyle="#1f2933";ctx.fillText(label,x+14,y);x+=w+8});ctx.restore()}};Chart.register(vpdLegendPlugin);
+const baseOptions={
+ responsive:true,maintainAspectRatio:false,
+ plugins:{legend:{display:false},tooltip:{mode:"index",intersect:false}},
+ scales:{
+  x:{grid:{display:false},ticks:{color:"#111827",font:{size:10}}},
+  y:{beginAtZero:true,grid:{color:"#e6e9ed"},ticks:{color:"#111827",font:{size:10}}}
+ }
+};
 
-
-function fmt(v,d=1){return Number.isFinite(v)?v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—"}
-function dateLabel(iso){return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(iso))}
-function dayLabel(iso){return new Intl.DateTimeFormat("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"}).format(new Date(`${iso}T12:00:00`))}
-function calcVpd(t,rh){const es=.6108*Math.exp((17.27*t)/(t+237.3));return Math.max(0,es*(1-rh/100))}
-function vpdLabel(v){if(v<1)return"Faible demande atmosphérique";if(v<1.5)return"Conditions favorables";if(v<2.5)return"Début de régulation stomatique";if(v<3.5)return"Contrainte atmosphérique élevée";if(v<4.5)return"Stress sévère";return"Stress extrême"}
-function destroy(name){if(state.charts[name])state.charts[name].destroy()}
-
-async function fetchJson(url){const r=await fetch(url);if(!r.ok){let detail="";try{const e=await r.json();detail=e.reason?`: ${e.reason}`:""}catch{}throw new Error(`Erreur Open-Meteo (${r.status})${detail}`)}return r.json()}
-async function fetchWeather(lat,lon){
- const p=new URLSearchParams({latitude:lat.toFixed(4),longitude:lon.toFixed(4),hourly:["temperature_2m","relative_humidity_2m","precipitation","wind_speed_10m","shortwave_radiation"].join(","),daily:["precipitation_sum","et0_fao_evapotranspiration","temperature_2m_max","temperature_2m_min"].join(","),timezone:"auto",past_days:"30",forecast_days:"7"});
- const d=await fetchJson(`https://api.open-meteo.com/v1/forecast?${p}`);
- const hourly=d.hourly.time.map((time,i)=>{const temperature=Number(d.hourly.temperature_2m[i]);const humidity=Number(d.hourly.relative_humidity_2m[i]);return{time,temperature,humidity,vpd:calcVpd(temperature,humidity),rain:Number(d.hourly.precipitation[i]||0),wind:Number(d.hourly.wind_speed_10m[i]||0),radiation:Number(d.hourly.shortwave_radiation[i]||0)}});
- const daily=d.daily.time.map((date,i)=>({date,rain:Number(d.daily.precipitation_sum[i]||0),et0:Number(d.daily.et0_fao_evapotranspiration[i]||0),tmax:Number(d.daily.temperature_2m_max[i]),tmin:Number(d.daily.temperature_2m_min[i])}));
- return{hourly,daily,timezone:d.timezone,elevation:d.elevation}
+async function getWeather(lat,lon){
+ const p=new URLSearchParams({
+  latitude:lat.toFixed(4),longitude:lon.toFixed(4),
+  hourly:["temperature_2m","relative_humidity_2m","precipitation","wind_speed_10m"].join(","),
+  daily:["temperature_2m_max","temperature_2m_min","precipitation_sum","et0_fao_evapotranspiration"].join(","),
+  timezone:"auto",forecast_days:"8"
+ });
+ const r=await fetch(`https://api.open-meteo.com/v1/forecast?${p}`);
+ if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.reason||`Erreur ${r.status}`)}
+ return r.json()
 }
 
-function currentIndex(){const now=Date.now();let best=0,gap=Infinity;state.hourly.forEach((x,i)=>{const g=Math.abs(new Date(x.time)-now);if(g<gap){gap=g;best=i}});return best}
-function futureHours(n){const i=currentIndex();return state.hourly.slice(i,i+n)}
-function forecastDays(){const now=new Date();now.setHours(0,0,0,0);return state.daily.filter(d=>new Date(`${d.date}T12:00:00`)>=now).slice(0,7)}
-function hourlyForDay(date){return state.hourly.filter(x=>x.time.startsWith(date))}
-function pastDays(n){const end=new Date();end.setHours(23,59,59,999);const start=new Date(end);start.setDate(start.getDate()-n+1);return state.daily.filter(d=>{const x=new Date(`${d.date}T12:00:00`);return x>=start&&x<=end})}
-
-function scoreDay(day){
- const h=hourlyForDay(day.date);
- const maxVpd=Math.max(...h.map(x=>x.vpd),0);
- const hours25=h.filter(x=>x.vpd>2.5).length;
- const vpdScore=Math.min(100,maxVpd/4.5*100);
- const durationScore=Math.min(100,hours25/10*100);
- const heatScore=day.tmax<=30?0:Math.min(100,(day.tmax-30)/10*100);
- const et0Score=Math.min(100,day.et0/8*100);
- const score=Math.round(.40*vpdScore+.25*durationScore+.20*heatScore+.15*et0Score);
- return{...day,score,maxVpd,hours25}
-}
-function scoreLabel(s){if(s<25)return"Faible";if(s<50)return"Modérée";if(s<75)return"Élevée";if(s<90)return"Sévère";return"Extrême"}
-
-function irrigationQuality(x){
- let score=100;
- score-=Math.max(0,x.vpd-1)*22;
- score-=Math.max(0,x.wind-8)*4;
- score-=Math.max(0,x.temperature-25)*3;
- if(x.rain>0)score-=60;
- if(x.radiation>150)score-=10;
- if(score>=70)return{label:"Favorable",class:"badge-good",score};
- if(score>=45)return{label:"Acceptable",class:"badge-ok",score};
- return{label:"Défavorable",class:"badge-poor",score}
+function prep(data){
+ const hourly=data.hourly.time.map((time,i)=>{
+  const temp=+data.hourly.temperature_2m[i],rh=+data.hourly.relative_humidity_2m[i];
+  return{time,temp,rh,vpd:vpd(temp,rh),rain:+data.hourly.precipitation[i]||0,wind:+data.hourly.wind_speed_10m[i]||0}
+ });
+ const daily=data.daily.time.slice(0,7).map((date,i)=>({
+  date,tmax:+data.daily.temperature_2m_max[i],tmin:+data.daily.temperature_2m_min[i],
+  rain:+data.daily.precipitation_sum[i]||0,et0:+data.daily.et0_fao_evapotranspiration[i]||0
+ }));
+ return{hourly,daily}
 }
 
-function initNav(){
- const links=document.querySelectorAll(".nav-link"),secs=document.querySelectorAll(".page-section"),menu=document.getElementById("mainNav"),btn=document.getElementById("menuButton");
- links.forEach(l=>l.addEventListener("click",()=>{secs.forEach(s=>s.classList.toggle("active",s.id===l.dataset.section));links.forEach(x=>x.classList.toggle("active",x===l));menu.classList.remove("open");window.scrollTo({top:0,behavior:"smooth"})}));
- btn.addEventListener("click",()=>menu.classList.toggle("open"))
+function dayHours(hourly,date){return hourly.filter(x=>x.time.startsWith(date))}
+function score(day,hours){
+ const maxV=Math.max(...hours.map(x=>x.vpd),0);
+ const over25=hours.filter(x=>x.vpd>2.5).length;
+ const vScore=Math.min(100,maxV/4.5*100);
+ const dScore=Math.min(100,over25/10*100);
+ const hScore=day.tmax<=30?0:Math.min(100,(day.tmax-30)/10*100);
+ const eScore=Math.min(100,day.et0/8*100);
+ return Math.round(.4*vScore+.25*dScore+.2*hScore+.15*eScore)
 }
-function initLocation(){
- const form=document.getElementById("manualLocationForm");
- document.getElementById("manualButton").onclick=()=>form.classList.toggle("hidden");
- form.onsubmit=e=>{e.preventDefault();loadLocation(Number(latitudeInput.value),Number(longitudeInput.value),"Position saisie manuellement")};
- document.getElementById("geolocateButton").onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>loadLocation(p.coords.latitude,p.coords.longitude,"Ma position"),()=>locationMessage.textContent="Localisation impossible. Utilisez la saisie manuelle."):locationMessage.textContent="Géolocalisation indisponible."
+function scoreColor(v){
+ if(v<20)return"#16975c";
+ if(v<40)return"#56b84e";
+ if(v<60)return"#ffc400";
+ if(v<80)return"#ff7a00";
+ return"#ef2525"
 }
-async function loadLocation(lat,lon,label){
- loadingPanel.classList.remove("hidden");locationMessage.textContent="";
- try{const r=await fetchWeather(lat,lon);state.hourly=r.hourly;state.daily=r.daily;state.label=label;locationTitle.textContent=label;locationDetails.textContent=`Latitude ${fmt(lat,4)} · longitude ${fmt(lon,4)} · altitude ${fmt(r.elevation,0)} m`;locationMessage.textContent="Données actualisées.";renderAll()}
- catch(e){locationMessage.textContent=`Impossible de charger les données : ${e.message}`}
- finally{loadingPanel.classList.add("hidden")}
+function irrigationLabel(q){
+ if(q>=75)return["Très favorable","very-good"];
+ if(q>=58)return["Favorable","good"];
+ if(q>=38)return["Défavorable","bad"];
+ return["Très défavorable","very-bad"]
 }
-
-function renderDashboard(){
- const fd=forecastDays().map(scoreDay),today=fd[0],next48=futureHours(48);
- if(!today)return;
- todayScore.textContent=`${today.score}/100`;todayScoreLabel.textContent=scoreLabel(today.score);todayMaxVpd.textContent=`${fmt(today.maxVpd)} kPa`;todayVpdLabel.textContent=vpdLabel(today.maxVpd);
- const now2=new Date(),tomorrow2=new Date(now2);tomorrow2.setDate(now2.getDate()+1);const target2=`${tomorrow2.getFullYear()}-${String(tomorrow2.getMonth()+1).padStart(2,"0")}-${String(tomorrow2.getDate()).padStart(2,"0")}`,tomorrowRows=state.hourly.filter(x=>x.time.startsWith(target2)),blocks2=[];for(let s=0;s<24;s+=3){const p=tomorrowRows.filter(x=>{const h=new Date(x.time).getHours();return h>=s&&h<s+3});if(!p.length)continue;const avg=k=>p.reduce((a,x)=>a+x[k],0)/p.length,o={start:s,end:s+3,vpd:avg("vpd"),wind:avg("wind"),temperature:avg("temperature"),rain:p.reduce((a,x)=>a+x.rain,0)};o.q=irrigationQuality(o);blocks2.push(o)}blocks2.sort((a,b)=>b.q.score-a.q.score);const best=blocks2[0];bestWindow.textContent=best?`${String(best.start).padStart(2,"0")} h – ${String(best.end).padStart(2,"0")} h`:"—";bestWindowDetails.textContent=best?`${best.q.label} · DPV ${fmt(best.vpd)} kPa · vent ${fmt(best.wind)} km/h`:"Prévision indisponible";
- const deficit=computeDeficit(pastDays(30));dashboardDeficit.textContent=`${fmt(deficit.at(-1)?.cumulative||0)} mm`;
-
- destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
-?"rgba(72,149,239,.75)"
-:d.score<50
-?"rgba(82,183,136,.75)"
-:d.score<75
-?"rgba(248,196,62,.82)"
-:d.score<90
-?"rgba(244,140,54,.82)"
-:"rgba(83,52,131,.82)"),borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
- destroy("dashVpd");state.charts.dashVpd=new Chart(dashboardVpdChart,{type:"line",data:{labels:next48.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:next48.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}})
+function irrigationScore(x){
+ let q=100;
+ q-=Math.max(0,x.vpd-1)*25;
+ q-=Math.max(0,x.wind-8)*4;
+ q-=Math.max(0,x.temp-26)*3;
+ if(x.rain>0)q-=60;
+ return q
 }
 
-function renderVpd(){
- const hours=Number(vpdPeriod.value),rows=futureHours(hours);if(!rows.length)return;
- destroy("vpd");state.charts.vpd=new Chart(vpdChart,{type:"line",data:{labels:rows.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:rows.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}});
+function render(data,meta,lat,lon,name){
+ const {hourly,daily}=prep(data);
+ const labels=daily.map(x=>shortDate(x.date));
+ periodStart.textContent=labels[0];periodEnd.textContent=labels.at(-1);
+ locationName.textContent=name;altitudeValue.textContent=`${fmt(meta.elevation,0)} m`;
+ latitudeValue.textContent=`${fmt(lat,2)} °N`;longitudeValue.textContent=`${fmt(lon,2)} °E`;
+ updatedValue.textContent=new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date());
+
+ let ce=0,cp=0,cd=0;const etCum=[],rainCum=[],defCum=[];
+ daily.forEach(d=>{ce+=d.et0;cp+=d.rain;cd+=d.et0-d.rain;etCum.push(ce);rainCum.push(cp);defCum.push(cd)});
+ et0Total.textContent=`${fmt(ce)} mm`;rainTotal.textContent=`${fmt(cp)} mm`;deficitTotal.textContent=`${cd>=0?"+":""}${fmt(cd)} mm`;
+
+ destroy("deficit");
+ charts.deficit=new Chart(deficitChart,{type:"line",data:{labels,datasets:[
+  {label:"ET₀ cumulée",data:etCum,borderColor:"#2f80ed",backgroundColor:"transparent",pointRadius:2,tension:.15},
+  {label:"Pluie cumulée",data:rainCum,borderColor:"#53ad3b",backgroundColor:"rgba(83,173,59,.18)",fill:true,pointRadius:2,tension:.15},
+  {label:"Déficit",data:defCum,borderColor:"#c51624",backgroundColor:"rgba(197,22,36,.15)",fill:{target:{value:0}},pointRadius:2,tension:.15}
+ ]},options:{...baseOptions,plugins:{legend:{display:true,position:"bottom",labels:{boxWidth:20,font:{size:10}}}},scales:{...baseOptions.scales,y:{...baseOptions.scales.y,title:{display:true,text:"mm",align:"end"}}}}});
+
+ const futureHourly=hourly.slice(0,168);
+ destroy("vpd");
+ charts.vpd=new Chart(vpdChart,{type:"line",data:{labels:futureHourly.map(x=>x.time),datasets:[{data:futureHourly.map(x=>x.vpd),borderColor:"#a40012",pointRadius:0,tension:.2}]},options:{...baseOptions,scales:{x:{grid:{display:false},ticks:{callback:(v,i)=>{const s=futureHourly[i].time;return i%24===0?shortDate(s.slice(0,10)):""},maxRotation:0},y:{beginAtZero:true,suggestedMax:6,grid:{color:"#e6e9ed"},title:{display:true,text:"kPa",align:"end"}}}}});
+
  const thresholds=[1.5,2.5,3.5,4.5];
- destroy("threshold");state.charts.threshold=new Chart(thresholdChart,{type:"bar",data:{labels:["> 1,5 kPa — régulation","> 2,5 kPa — contrainte","> 3,5 kPa — stress sévère","> 4,5 kPa — stress extrême"],datasets:[{label:`Heures sur ${hours} h`,data:thresholds.map(t=>rows.filter(x=>x.vpd>t).length),backgroundColor:["rgba(248,196,62,.8)","rgba(244,140,54,.8)","rgba(214,69,65,.8)","rgba(83,52,131,.8)"],borderRadius:5}]},options:{...chartBase,indexAxis:"y",scales:{x:{beginAtZero:true,title:{display:true,text:"Heures"}},y:{grid:{display:false}}}}});
-  vpdReading.innerHTML=`<div class="vpd-legend-inline"><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(72,149,239,.55)"></span>0–1,0 kPa · Faible demande</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(82,183,136,.55)"></span>1,0–1,5 kPa · Conditions favorables</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(248,196,62,.65)"></span>1,5–2,5 kPa · Régulation stomatique</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(244,140,54,.65)"></span>2,5–3,5 kPa · Contrainte élevée</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(214,69,65,.60)"></span>3,5–4,5 kPa · Stress sévère</span><span class="vpd-legend-item"><span class="vpd-swatch" style="background:rgba(83,52,131,.60)"></span>&gt; 4,5 kPa · Stress extrême</span></div>`
+ const thValues=thresholds.map(t=>futureHourly.filter(x=>x.vpd>t).length);
+ destroy("threshold");
+ charts.threshold=new Chart(thresholdChart,{type:"bar",data:{labels:["> 1,5 kPa","> 2,5 kPa","> 3,5 kPa","> 4,5 kPa"],datasets:[{data:thValues,backgroundColor:["#ffc400","#ff7a00","#ef2525","#7a1fa2"],borderWidth:0,barPercentage:.48}]},options:{...baseOptions,plugins:{legend:{display:false},datalabels:false},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:"#e6e9ed"},title:{display:true,text:"h",align:"end"}}}}});
+
+ const scores=daily.map(d=>score(d,dayHours(hourly,d.date)));
+ destroy("score");
+ charts.score=new Chart(scoreChart,{type:"bar",data:{labels,datasets:[{data:scores,backgroundColor:scores.map(scoreColor),barPercentage:.48}]},options:{...baseOptions,scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:100,grid:{color:"#e6e9ed"},title:{display:true,text:"Indice (0-100)",align:"end"}}}}});
+
+ const heat=daily.map(d=>dayHours(hourly,d.date).filter(x=>x.temp>35).length);
+ const wet=daily.map(d=>dayHours(hourly,d.date).filter(x=>x.rh>=90||x.rain>0).length);
+ const fav=daily.map(d=>dayHours(hourly,d.date).filter(x=>x.vpd>=.8&&x.vpd<=1.8&&x.temp>=20&&x.temp<=30).length);
+ const makeBlue=(id,key,values,color)=>{destroy(key);charts[key]=new Chart(id,{type:"bar",data:{labels,datasets:[{data:values,backgroundColor:color,barPercentage:.48}]},options:{...baseOptions,scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:"#e6e9ed"},title:{display:true,text:"h",align:"end"}}}}})};
+ makeBlue(heatChart,"heat",heat,"#3e88e8");makeBlue(wetChart,"wet",wet,"#3e88e8");makeBlue(favorableChart,"fav",fav,"#58b748");
+ destroy("et0");charts.et0=new Chart(et0Chart,{type:"bar",data:{labels,datasets:[{data:daily.map(d=>d.et0),backgroundColor:"#3e88e8",barPercentage:.48}]},options:{...baseOptions,scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:"#e6e9ed"},title:{display:true,text:"mm",align:"end"}}}}});
+
+ const tomorrow=daily[1]?.date;irrigationDate.textContent=`Demain : ${shortDate(tomorrow)}`;
+ const htom=hourly.filter(x=>x.time.startsWith(tomorrow));irrigationBody.innerHTML="";
+ for(let s=0;s<24;s+=3){
+  const p=htom.filter(x=>+x.time.slice(11,13)>=s&&+x.time.slice(11,13)<s+3);
+  const avg=k=>p.reduce((a,x)=>a+x[k],0)/Math.max(1,p.length);
+  const q=irrigationScore({vpd:avg("vpd"),wind:avg("wind"),temp:avg("temp"),rain:p.reduce((a,x)=>a+x.rain,0)});
+  const [label,cls]=irrigationLabel(q);
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td>${String(s).padStart(2,"0")}h – ${String(s+3).padStart(2,"0")}h</td><td class="condition ${cls}">${label}</td>`;
+  irrigationBody.appendChild(tr)
+ }
 }
 
-function renderScore(){
- const fd=forecastDays().map(scoreDay);
- destroy("score");state.charts.score=new Chart(scoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
-?"rgba(72,149,239,.75)"
-:d.score<50
-?"rgba(82,183,136,.75)"
-:d.score<75
-?"rgba(248,196,62,.82)"
-:d.score<90
-?"rgba(244,140,54,.82)"
-:"rgba(83,52,131,.82)"),borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
- scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
+async function load(lat,lon,name){
+ try{
+  showStatus("Chargement des données…");
+  const data=await getWeather(lat,lon);
+  render(data,data,lat,lon,name);
+ }catch(e){showStatus(`Impossible de charger : ${e.message}`)}
 }
 
-function renderIrrigation(){const now=new Date(),tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);const target=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,"0")}-${String(tomorrow.getDate()).padStart(2,"0")}`;const rows=state.hourly.filter(x=>x.time.startsWith(target)),blocks=[];for(let start=0;start<24;start+=3){const part=rows.filter(x=>{const h=new Date(x.time).getHours();return h>=start&&h<start+3});if(!part.length)continue;const avg=key=>part.reduce((s,x)=>s+x[key],0)/part.length;const summary={start,end:start+3,vpd:avg("vpd"),wind:avg("wind"),temperature:avg("temperature"),rain:part.reduce((s,x)=>s+x.rain,0)};summary.q=irrigationQuality(summary);blocks.push(summary)}irrigationTable.innerHTML=blocks.map(x=>`<tr><td>${String(x.start).padStart(2,"0")} h – ${String(x.end).padStart(2,"0")} h</td><td><span class="badge ${x.q.class}">${x.q.label}</span></td><td>${fmt(x.vpd)} kPa</td><td>${fmt(x.wind)} km/h</td><td>${fmt(x.temperature)} °C</td><td>${fmt(x.rain)} mm</td></tr>`).join("")}
-
-function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
-
-function computeDeficit(days){let c=0;return days.map(d=>{c+=d.et0-d.rain;return{...d,cumulative:c}})}
-function renderDeficit(){
- const days=Number(deficitPeriod.value),rows=computeDeficit(pastDays(days));if(!rows.length)return;const et0=rows.reduce((s,d)=>s+d.et0,0),rain=rows.reduce((s,d)=>s+d.rain,0),last=rows.at(-1).cumulative,week=rows.slice(-7).reduce((s,d)=>s+d.et0-d.rain,0);
- et0Total.textContent=`${fmt(et0)} mm`;rainTotal.textContent=`${fmt(rain)} mm`;deficitTotal.textContent=`${fmt(last)} mm`;deficitWeekChange.textContent=`${week>=0?"+":""}${fmt(week)} mm`;
- destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>dayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",grid:{drawOnChartArea:false}}}}})
-}
-function renderAll(){renderDashboard();renderVpd();renderScore();renderIrrigation();renderOthers();renderDeficit()}
-document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})
+locateBtn.onclick=()=>{
+ manualLocation.classList.toggle("hidden");
+ if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(p=>load(p.coords.latitude,p.coords.longitude,"Ma position"),()=>{});
+ }
+};
+loadCoordsBtn.onclick=()=>load(+latInput.value,+lonInput.value,"Position manuelle");
+load(DEFAULT.lat,DEFAULT.lon,DEFAULT.name);
