@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Prototype Sud Agro Météo : VPD horaire, heures au-dessus des seuils et déficit climatique cumulé.">
+  <meta name="theme-color" content="#7f1d2d">
+  <title>Indicateurs agroclimatiques — Sud Agro Météo</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">S</div>
+      <div>
+        <p class="brand-kicker">Sud Agro Météo</p>
+        <h1>Indicateurs agroclimatiques</h1>
+      </div>
+    </div>
+
+    <button id="menuButton" class="menu-button" type="button" aria-expanded="false" aria-controls="mainNav">
+      Menu
+    </button>
+
+    <nav id="mainNav" class="main-nav" aria-label="Navigation principale">
+      <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
+      <button class="nav-link" data-section="vpd">VPD horaire</button>
+      <button class="nav-link" data-section="deficit">Déficit climatique</button>
+      <button class="nav-link" data-section="comparaison">Station / Open-Meteo</button>
+      <button class="nav-link" data-section="methodes">Méthodes</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="location-panel">
+      <div>
+        <p class="eyebrow">Localisation des indicateurs</p>
+        <h2 id="locationTitle">Choisissez une position</h2>
+        <p id="locationDetails">La position sert à récupérer automatiquement les données Open-Meteo.</p>
+      </div>
+
+      <div class="location-actions">
+        <button id="geolocateButton" class="primary-button" type="button">Trouver ma position</button>
+        <button id="manualButton" class="secondary-button" type="button">Saisir des coordonnées</button>
+      </div>
+
+      <form id="manualLocationForm" class="manual-form hidden">
+        <label>
+          Latitude
+          <input id="latitudeInput" type="number" min="-90" max="90" step="0.0001" value="43.6077" required>
+        </label>
+        <label>
+          Longitude
+          <input id="longitudeInput" type="number" min="-180" max="180" step="0.0001" value="4.0122" required>
+        </label>
+        <button class="primary-button" type="submit">Charger les données</button>
+      </form>
+
+      <div id="locationMessage" class="status-message" role="status"></div>
+    </section>
+
+    <div id="loadingPanel" class="loading-panel hidden">
+      <span class="spinner" aria-hidden="true"></span>
+      Chargement des données météorologiques…
+    </div>
+
+    <section id="dashboard" class="page-section active">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Synthèse agroclimatique</p>
+          <h2>Visualiser la demande atmosphérique et l’évolution du déficit climatique</h2>
+          <p>
+            Les indicateurs sont calculés automatiquement à partir des données horaires
+            Open-Meteo. La comparaison avec la station SAM est simulée dans ce prototype.
+          </p>
+        </div>
+        <div class="hero-badge">
+          <span class="status-dot"></span>
+          Prototype fonctionnel
+        </div>
+      </div>
+
+      <div class="notice">
+        <strong>À distinguer :</strong>
+        le VPD décrit la demande évaporative de l’air. Le déficit climatique cumulé
+        correspond ici à ET₀ moins pluie efficace ; il ne représente pas directement
+        le stock d’eau réel du sol.
+      </div>
+
+      <div class="summary-grid">
+        <article class="summary-card">
+          <p>VPD actuel</p>
+          <strong id="currentVpd">—</strong>
+          <span id="currentVpdClass">—</span>
+        </article>
+        <article class="summary-card">
+          <p>Maximum sur 24 h</p>
+          <strong id="maxVpd24">—</strong>
+          <span id="maxVpdTime">—</span>
+        </article>
+        <article class="summary-card">
+          <p>Heures au-dessus du seuil</p>
+          <strong id="hoursAbove">—</strong>
+          <span id="hoursThresholdLabel">—</span>
+        </article>
+        <article class="summary-card">
+          <p>Déficit sur 30 jours</p>
+          <strong id="deficit30">—</strong>
+          <span>ET₀ − pluie efficace</span>
+        </article>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Prochaines 48 heures</p>
+              <h3>VPD horaire</h3>
+            </div>
+            <button class="text-button" data-go="vpd">Voir le détail</button>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="dashboardVpdChart"></canvas>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">30 derniers jours</p>
+              <h3>Déficit climatique cumulé</h3>
+            </div>
+            <button class="text-button" data-go="deficit">Voir le détail</button>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="dashboardDeficitChart"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <article class="interpretation-box">
+        <h3>Lecture rapide</h3>
+        <p id="dashboardInterpretation">
+          Chargez une position pour générer automatiquement les indicateurs.
+        </p>
+      </article>
+    </section>
+
+    <section id="vpd" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Demande évaporative de l’air</p>
+          <h2>VPD horaire et durée d’exposition</h2>
+          <p>
+            Le graphique distingue les données passées et les prévisions.
+            Le seuil d’analyse peut être modifié selon l’usage retenu dans SAM.
+          </p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>
+          Période affichée
+          <select id="vpdPeriod">
+            <option value="24">24 heures</option>
+            <option value="48" selected>48 heures</option>
+            <option value="72">72 heures</option>
+            <option value="168">7 jours</option>
+          </select>
+        </label>
+
+        <label>
+          Seuil de VPD
+          <select id="vpdThreshold">
+            <option value="1.5">1,5 kPa</option>
+            <option value="2" selected>2,0 kPa</option>
+            <option value="2.5">2,5 kPa</option>
+            <option value="3">3,0 kPa</option>
+          </select>
+        </label>
+
+        <label>
+          Source
+          <select id="vpdSource">
+            <option value="openmeteo">Open-Meteo</option>
+            <option value="sam">Station SAM simulée</option>
+            <option value="both" selected>Comparer les deux</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <p>Maximum de la période</p>
+          <strong id="periodMaxVpd">—</strong>
+          <span id="periodMaxTime">—</span>
+        </article>
+        <article class="metric-card">
+          <p>Durée au-dessus du seuil</p>
+          <strong id="periodHoursAbove">—</strong>
+          <span id="periodThresholdText">—</span>
+        </article>
+        <article class="metric-card">
+          <p>VPD moyen diurne</p>
+          <strong id="dayMeanVpd">—</strong>
+          <span>Entre 8 h et 20 h</span>
+        </article>
+        <article class="metric-card">
+          <p>Écart moyen SAM / modèle</p>
+          <strong id="meanVpdGap">—</strong>
+          <span>Station simulée</span>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Série horaire</p>
+            <h3>VPD observé et prévu</h3>
+          </div>
+        </div>
+        <div class="chart-wrap large">
+          <canvas id="vpdChart"></canvas>
+        </div>
+      </article>
+
+      <div class="two-columns">
+        <article class="panel">
+          <h3>Heures cumulées au-dessus des seuils</h3>
+          <div class="chart-wrap">
+            <canvas id="thresholdChart"></canvas>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>Interprétation proposée</h3>
+          <div id="vpdReading" class="reading-card">
+            Chargez une position pour afficher l’analyse.
+          </div>
+          <p class="small-note">
+            Les classes de demande atmosphérique sont indicatives. Elles devront être
+            validées pour les espèces et les usages retenus par SudExpé.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="deficit" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Bilan climatique simplifié</p>
+          <h2>Déficit climatique cumulé</h2>
+          <p>
+            Le calcul cumule l’ET₀ et retranche une part de la pluie.
+            Le cumul est bloqué à zéro lorsque les pluies dépassent la demande climatique.
+          </p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>
+          Période
+          <select id="deficitPeriod">
+            <option value="7">7 derniers jours</option>
+            <option value="14">14 derniers jours</option>
+            <option value="30" selected>30 derniers jours</option>
+          </select>
+        </label>
+
+        <label>
+          Pluie efficace
+          <select id="rainEfficiency">
+            <option value="1">100 %</option>
+            <option value="0.8" selected>80 %</option>
+            <option value="0.6">60 %</option>
+            <option value="0.4">40 %</option>
+          </select>
+        </label>
+
+        <label>
+          Remise à zéro
+          <select id="resetMode">
+            <option value="zero" selected>Bloquer le cumul à zéro</option>
+            <option value="balance">Autoriser un bilan négatif</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <p>ET₀ cumulée</p>
+          <strong id="et0Total">—</strong>
+          <span>Période sélectionnée</span>
+        </article>
+        <article class="metric-card">
+          <p>Pluie totale</p>
+          <strong id="rainTotal">—</strong>
+          <span id="effectiveRainTotal">—</span>
+        </article>
+        <article class="metric-card">
+          <p>Déficit cumulé</p>
+          <strong id="deficitTotal">—</strong>
+          <span>Indicateur climatique</span>
+        </article>
+        <article class="metric-card">
+          <p>Évolution sur 7 jours</p>
+          <strong id="deficitWeekChange">—</strong>
+          <span>Variation récente</span>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Évolution quotidienne</p>
+            <h3>ET₀, pluie et déficit cumulé</h3>
+          </div>
+        </div>
+        <div class="chart-wrap large">
+          <canvas id="deficitChart"></canvas>
+        </div>
+      </article>
+
+      <div class="warning-box">
+        <strong>Limite agronomique :</strong>
+        ce calcul ne prend pas en compte la réserve utile du sol, l’enracinement,
+        le coefficient cultural, ni les irrigations. Il doit être nommé
+        « déficit climatique » et non « déficit hydrique de la parcelle ».
+      </div>
+    </section>
+
+    <section id="comparaison" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Contrôle de représentativité</p>
+          <h2>Comparaison station SAM / Open-Meteo</h2>
+          <p>
+            Cette page illustre la comparaison entre une mesure locale et une donnée
+            météorologique modélisée. Dans ce prototype, la station SAM est simulée.
+          </p>
+        </div>
+      </div>
+
+      <div class="notice">
+        <strong>Station simulée :</strong>
+        les valeurs SAM sont générées à partir d’Open-Meteo avec de petites variations
+        déterministes. Elles ne correspondent pas à une station réelle.
+      </div>
+
+      <div class="comparison-grid">
+        <article class="comparison-card">
+          <p>Écart moyen de VPD</p>
+          <strong id="comparisonMeanGap">—</strong>
+          <span>SAM simulée − Open-Meteo</span>
+        </article>
+        <article class="comparison-card">
+          <p>Écart maximal de VPD</p>
+          <strong id="comparisonMaxGap">—</strong>
+          <span>Valeur absolue sur 48 h</span>
+        </article>
+        <article class="comparison-card">
+          <p>Écart de température</p>
+          <strong id="comparisonTempGap">—</strong>
+          <span>Moyenne sur 48 h</span>
+        </article>
+        <article class="comparison-card">
+          <p>Écart d’humidité</p>
+          <strong id="comparisonRhGap">—</strong>
+          <span>Moyenne sur 48 h</span>
+        </article>
+      </div>
+
+      <article class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Comparaison horaire</p>
+            <h3>VPD des deux sources</h3>
+          </div>
+        </div>
+        <div class="chart-wrap large">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+      </article>
+
+      <article class="interpretation-box">
+        <h3>Utilisation dans SAM</h3>
+        <p>
+          Lorsque la station locale est disponible, elle doit être prioritaire pour
+          représenter le verger. Open-Meteo peut assurer une continuité en cas de donnée
+          manquante, fournir des prévisions et couvrir les producteurs sans station proche.
+        </p>
+      </article>
+    </section>
+
+    <section id="methodes" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Définitions et calculs</p>
+          <h2>Méthodes utilisées dans le prototype</h2>
+        </div>
+      </div>
+
+      <div class="method-grid">
+        <article class="method-card">
+          <span class="method-number">01</span>
+          <h3>VPD horaire</h3>
+          <p>
+            Le prototype utilise directement la variable horaire
+            « vapour_pressure_deficit » fournie par Open-Meteo, exprimée en kPa.
+          </p>
+        </article>
+
+        <article class="method-card">
+          <span class="method-number">02</span>
+          <h3>Heures au-dessus du seuil</h3>
+          <p>
+            Chaque valeur horaire supérieure au seuil choisi compte pour une heure.
+            Le seuil est modifiable dans l’interface.
+          </p>
+        </article>
+
+        <article class="method-card">
+          <span class="method-number">03</span>
+          <h3>Déficit climatique</h3>
+          <p>
+            Calcul journalier : ET₀ − pluie × coefficient d’efficacité.
+            Le résultat est ensuite cumulé sur la période sélectionnée.
+          </p>
+        </article>
+
+        <article class="method-card">
+          <span class="method-number">04</span>
+          <h3>Géolocalisation</h3>
+          <p>
+            Le navigateur demande l’autorisation d’accéder à la position. L’utilisateur
+            peut aussi saisir manuellement une latitude et une longitude.
+          </p>
+        </article>
+      </div>
+
+      <article class="panel prototype-scope">
+        <h3>Évolutions à prévoir pour l’intégration à SAM</h3>
+        <ul>
+          <li>Connexion aux mesures réelles des stations SAM.</li>
+          <li>Choix automatique de la station la plus proche.</li>
+          <li>Affichage de la qualité et de la complétude des données.</li>
+          <li>Historique saisonnier depuis une date agronomique définie.</li>
+          <li>Notifications en cas de VPD élevé pendant plusieurs heures.</li>
+          <li>Passage du déficit climatique au bilan cultural avec Kc et irrigation.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>Prototype « Indicateurs agroclimatiques » — Sud Agro Météo.</p>
+    <p>Données Open-Meteo et station SAM simulée.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
