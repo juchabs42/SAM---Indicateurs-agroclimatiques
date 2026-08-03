@@ -27,7 +27,6 @@
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
       <button class="nav-link" data-section="vpd">VPD horaire</button>
       <button class="nav-link" data-section="deficit">Déficit climatique</button>
-      <button class="nav-link" data-section="comparaison">Station / Open-Meteo</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
     </nav>
   </header>
@@ -72,12 +71,12 @@
           <h2>Visualiser la demande atmosphérique et l’évolution du déficit climatique</h2>
           <p>
             Les indicateurs sont calculés automatiquement à partir des données horaires
-            Open-Meteo. La comparaison avec la station SAM est simulée dans ce prototype.
+            Open-Meteo et de la position sélectionnée.
           </p>
         </div>
         <div class="hero-badge">
           <span class="status-dot"></span>
-          Prototype fonctionnel
+          Prototype agroclimatique
         </div>
       </div>
 
@@ -153,8 +152,8 @@
           <p class="eyebrow">Demande évaporative de l’air</p>
           <h2>VPD horaire et durée d’exposition</h2>
           <p>
-            Le graphique distingue les données passées et les prévisions.
-            Le seuil d’analyse peut être modifié selon l’usage retenu dans SAM.
+            Le graphique distingue les données passées et les prévisions. Les bandes colorées
+            correspondent à quatre classes fixes de demande atmosphérique.
           </p>
         </div>
       </div>
@@ -169,25 +168,6 @@
             <option value="168">7 jours</option>
           </select>
         </label>
-
-        <label>
-          Seuil de VPD
-          <select id="vpdThreshold">
-            <option value="1.5">1,5 kPa</option>
-            <option value="2" selected>2,0 kPa</option>
-            <option value="2.5">2,5 kPa</option>
-            <option value="3">3,0 kPa</option>
-          </select>
-        </label>
-
-        <label>
-          Source
-          <select id="vpdSource">
-            <option value="openmeteo">Open-Meteo</option>
-            <option value="sam">Station SAM simulée</option>
-            <option value="both" selected>Comparer les deux</option>
-          </select>
-        </label>
       </div>
 
       <div class="metric-grid">
@@ -197,9 +177,9 @@
           <span id="periodMaxTime">—</span>
         </article>
         <article class="metric-card">
-          <p>Durée au-dessus du seuil</p>
+          <p>Heures avec VPD ≥ 2 kPa</p>
           <strong id="periodHoursAbove">—</strong>
-          <span id="periodThresholdText">—</span>
+          <span>Demande élevée ou très élevée</span>
         </article>
         <article class="metric-card">
           <p>VPD moyen diurne</p>
@@ -207,9 +187,9 @@
           <span>Entre 8 h et 20 h</span>
         </article>
         <article class="metric-card">
-          <p>Écart moyen SAM / modèle</p>
-          <strong id="meanVpdGap">—</strong>
-          <span>Station simulée</span>
+          <p>Heures avec VPD ≥ 3 kPa</p>
+          <strong id="periodHoursVeryHigh">—</strong>
+          <span>Demande atmosphérique très élevée</span>
         </article>
       </div>
 
@@ -239,8 +219,8 @@
             Chargez une position pour afficher l’analyse.
           </div>
           <p class="small-note">
-            Les classes de demande atmosphérique sont indicatives. Elles devront être
-            validées pour les espèces et les usages retenus par SudExpé.
+            Ces classes sont des repères opérationnels. Elles ne constituent pas des seuils
+            universels de stress, car la réponse dépend notamment de l’espèce, du cultivar et de l’état hydrique du sol.
           </p>
         </article>
       </div>
@@ -252,8 +232,8 @@
           <p class="eyebrow">Bilan climatique simplifié</p>
           <h2>Déficit climatique cumulé</h2>
           <p>
-            Le calcul cumule l’ET₀ et retranche une part de la pluie.
-            Le cumul est bloqué à zéro lorsque les pluies dépassent la demande climatique.
+            Le calcul cumule l’ET₀ et retranche 100 % de la pluie mesurée.
+            Le bilan peut devenir négatif lorsque les pluies dépassent la demande climatique.
           </p>
         </div>
       </div>
@@ -267,24 +247,6 @@
             <option value="30" selected>30 derniers jours</option>
           </select>
         </label>
-
-        <label>
-          Pluie efficace
-          <select id="rainEfficiency">
-            <option value="1">100 %</option>
-            <option value="0.8" selected>80 %</option>
-            <option value="0.6">60 %</option>
-            <option value="0.4">40 %</option>
-          </select>
-        </label>
-
-        <label>
-          Remise à zéro
-          <select id="resetMode">
-            <option value="zero" selected>Bloquer le cumul à zéro</option>
-            <option value="balance">Autoriser un bilan négatif</option>
-          </select>
-        </label>
       </div>
 
       <div class="metric-grid">
@@ -296,7 +258,7 @@
         <article class="metric-card">
           <p>Pluie totale</p>
           <strong id="rainTotal">—</strong>
-          <span id="effectiveRainTotal">—</span>
+          <span>100 % de la pluie prise en compte</span>
         </article>
         <article class="metric-card">
           <p>Déficit cumulé</p>
@@ -330,69 +292,6 @@
       </div>
     </section>
 
-    <section id="comparaison" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Contrôle de représentativité</p>
-          <h2>Comparaison station SAM / Open-Meteo</h2>
-          <p>
-            Cette page illustre la comparaison entre une mesure locale et une donnée
-            météorologique modélisée. Dans ce prototype, la station SAM est simulée.
-          </p>
-        </div>
-      </div>
-
-      <div class="notice">
-        <strong>Station simulée :</strong>
-        les valeurs SAM sont générées à partir d’Open-Meteo avec de petites variations
-        déterministes. Elles ne correspondent pas à une station réelle.
-      </div>
-
-      <div class="comparison-grid">
-        <article class="comparison-card">
-          <p>Écart moyen de VPD</p>
-          <strong id="comparisonMeanGap">—</strong>
-          <span>SAM simulée − Open-Meteo</span>
-        </article>
-        <article class="comparison-card">
-          <p>Écart maximal de VPD</p>
-          <strong id="comparisonMaxGap">—</strong>
-          <span>Valeur absolue sur 48 h</span>
-        </article>
-        <article class="comparison-card">
-          <p>Écart de température</p>
-          <strong id="comparisonTempGap">—</strong>
-          <span>Moyenne sur 48 h</span>
-        </article>
-        <article class="comparison-card">
-          <p>Écart d’humidité</p>
-          <strong id="comparisonRhGap">—</strong>
-          <span>Moyenne sur 48 h</span>
-        </article>
-      </div>
-
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="panel-kicker">Comparaison horaire</p>
-            <h3>VPD des deux sources</h3>
-          </div>
-        </div>
-        <div class="chart-wrap large">
-          <canvas id="comparisonChart"></canvas>
-        </div>
-      </article>
-
-      <article class="interpretation-box">
-        <h3>Utilisation dans SAM</h3>
-        <p>
-          Lorsque la station locale est disponible, elle doit être prioritaire pour
-          représenter le verger. Open-Meteo peut assurer une continuité en cas de donnée
-          manquante, fournir des prévisions et couvrir les producteurs sans station proche.
-        </p>
-      </article>
-    </section>
-
     <section id="methodes" class="page-section">
       <div class="section-heading">
         <div>
@@ -424,8 +323,8 @@
           <span class="method-number">03</span>
           <h3>Déficit climatique</h3>
           <p>
-            Calcul journalier : ET₀ − pluie × coefficient d’efficacité.
-            Le résultat est ensuite cumulé sur la période sélectionnée.
+            Calcul journalier : ET₀ − pluie. Le résultat est ensuite cumulé
+            sans remise à zéro automatique.
           </p>
         </article>
 
@@ -442,9 +341,6 @@
       <article class="panel prototype-scope">
         <h3>Évolutions à prévoir pour l’intégration à SAM</h3>
         <ul>
-          <li>Connexion aux mesures réelles des stations SAM.</li>
-          <li>Choix automatique de la station la plus proche.</li>
-          <li>Affichage de la qualité et de la complétude des données.</li>
           <li>Historique saisonnier depuis une date agronomique définie.</li>
           <li>Notifications en cas de VPD élevé pendant plusieurs heures.</li>
           <li>Passage du déficit climatique au bilan cultural avec Kc et irrigation.</li>
@@ -455,7 +351,7 @@
 
   <footer>
     <p>Prototype « Indicateurs agroclimatiques » — Sud Agro Météo.</p>
-    <p>Données Open-Meteo et station SAM simulée.</p>
+    <p>Données météorologiques Open-Meteo.</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>

@@ -35,6 +35,34 @@ const chartBase = {
   }
 };
 
+const vpdBandsPlugin = {
+  id: "vpdBands",
+  beforeDraw(chart, args, options) {
+    if (!options || options.enabled === false || !chart.chartArea) return;
+    const { ctx, chartArea, scales } = chart;
+    const y = scales.y;
+    if (!y) return;
+
+    const bands = [
+      { min: 0, max: 1, color: "rgba(73, 118, 91, 0.13)" },
+      { min: 1, max: 2, color: "rgba(218, 166, 49, 0.13)" },
+      { min: 2, max: 3, color: "rgba(218, 112, 49, 0.14)" },
+      { min: 3, max: Math.max(5, y.max), color: "rgba(164, 58, 58, 0.13)" }
+    ];
+
+    ctx.save();
+    bands.forEach((band) => {
+      const top = y.getPixelForValue(Math.min(band.max, y.max));
+      const bottom = y.getPixelForValue(Math.max(band.min, y.min));
+      ctx.fillStyle = band.color;
+      ctx.fillRect(chartArea.left, top, chartArea.right - chartArea.left, bottom - top);
+    });
+    ctx.restore();
+  }
+};
+
+Chart.register(vpdBandsPlugin);
+
 function fmt(value, digits = 1) {
   if (!Number.isFinite(value)) return "—";
   return value.toLocaleString("fr-FR", {
@@ -61,9 +89,9 @@ function dayLabel(iso) {
 
 function vpdClass(vpd) {
   if (!Number.isFinite(vpd)) return "Donnée indisponible";
-  if (vpd < 0.8) return "Demande atmosphérique faible";
-  if (vpd < 1.5) return "Demande atmosphérique modérée";
-  if (vpd < 2.5) return "Demande atmosphérique élevée";
+  if (vpd < 1) return "Demande atmosphérique faible";
+  if (vpd < 2) return "Demande atmosphérique modérée";
+  if (vpd < 3) return "Demande atmosphérique élevée";
   return "Demande atmosphérique très élevée";
 }
 
@@ -74,17 +102,6 @@ function destroyChart(name) {
   }
 }
 
-function simulateSam(hourly) {
-  return hourly.map((item, index) => {
-    const hour = new Date(item.time).getHours();
-    const cycle = Math.sin((index + 2) * 0.63);
-    const daytimeEffect = hour >= 11 && hour <= 18 ? 0.10 : -0.03;
-    const temperature = item.temperature + 0.45 * cycle + daytimeEffect;
-    const humidity = Math.min(100, Math.max(0, item.humidity - 1.8 * cycle - daytimeEffect * 5));
-    const vpd = Math.max(0, item.vpd + 0.07 * cycle + daytimeEffect);
-    return { ...item, temperatureSam: temperature, humiditySam: humidity, vpdSam: vpd };
-  });
-}
 
 function calculateVpd(temperature, humidity) {
   if (!Number.isFinite(temperature) || !Number.isFinite(humidity)) return 0;
@@ -160,7 +177,7 @@ async function fetchWeather(latitude, longitude) {
     : aggregateDaily(hourly);
 
   return {
-    hourly: simulateSam(hourly),
+    hourly,
     daily,
     timezone: data.timezone,
     elevation: data.elevation
@@ -323,7 +340,7 @@ function renderDashboard() {
   const current = state.hourly[currentIndex];
   const next24 = state.hourly.slice(currentIndex, currentIndex + 24);
   const max = next24.reduce((a, b) => b.vpd > a.vpd ? b : a, next24[0]);
-  const threshold = Number(document.getElementById("vpdThreshold").value);
+  const threshold = 2;
   const hoursAbove = next24.filter((item) => item.vpd > threshold).length;
   const deficit = computeDeficit(pastDays(30), 0.8, "zero");
   const deficitValue = deficit.at(-1)?.cumulative || 0;
@@ -333,7 +350,7 @@ function renderDashboard() {
   document.getElementById("maxVpd24").textContent = `${fmt(max.vpd)} kPa`;
   document.getElementById("maxVpdTime").textContent = dateLabel(max.time);
   document.getElementById("hoursAbove").textContent = `${hoursAbove} h`;
-  document.getElementById("hoursThresholdLabel").textContent = `Au-dessus de ${fmt(threshold)} kPa sur 24 h`;
+  document.getElementById("hoursThresholdLabel").textContent = `VPD ≥ ${fmt(threshold)} kPa sur 24 h`;
   document.getElementById("deficit30").textContent = `${fmt(deficitValue)} mm`;
 
   const next48 = futureSlice(48);
@@ -352,7 +369,13 @@ function renderDashboard() {
         pointRadius: 1.5
       }]
     },
-    options: chartBase
+    options: {
+      ...chartBase,
+      plugins: {
+        ...chartBase.plugins,
+        vpdBands: { enabled: true }
+      }
+    }
   });
 
   destroyChart("dashboardDeficit");
@@ -375,89 +398,76 @@ function renderDashboard() {
 
   document.getElementById("dashboardInterpretation").textContent =
     `À ${state.label}, le maximum prévu sur les prochaines 24 heures est de ${fmt(max.vpd)} kPa. ` +
-    `${hoursAbove} heure(s) dépassent ${fmt(threshold)} kPa. ` +
-    `Le déficit climatique calculé sur les 30 derniers jours atteint ${fmt(deficitValue)} mm avec 80 % de pluie efficace.`;
+    `${hoursAbove} heure(s) présentent un VPD supérieur ou égal à ${fmt(threshold)} kPa. ` +
+    `Le bilan climatique cumulé sur les 30 derniers jours atteint ${fmt(deficitValue)} mm, avec 100 % de la pluie prise en compte.`;
 }
 
 function renderVpd() {
   const hours = Number(document.getElementById("vpdPeriod").value);
-  const threshold = Number(document.getElementById("vpdThreshold").value);
-  const source = document.getElementById("vpdSource").value;
   const rows = futureSlice(hours);
   if (!rows.length) return;
 
   const max = rows.reduce((a, b) => b.vpd > a.vpd ? b : a, rows[0]);
-  const hoursAbove = rows.filter((item) => item.vpd > threshold).length;
+  const hoursAbove2 = rows.filter((item) => item.vpd >= 2).length;
+  const hoursAbove3 = rows.filter((item) => item.vpd >= 3).length;
   const daytime = rows.filter((item) => {
     const hour = new Date(item.time).getHours();
     return hour >= 8 && hour < 20;
   });
   const meanDay = daytime.reduce((sum, item) => sum + item.vpd, 0) / Math.max(1, daytime.length);
-  const meanGap = rows.reduce((sum, item) => sum + (item.vpdSam - item.vpd), 0) / rows.length;
 
   document.getElementById("periodMaxVpd").textContent = `${fmt(max.vpd)} kPa`;
   document.getElementById("periodMaxTime").textContent = dateLabel(max.time);
-  document.getElementById("periodHoursAbove").textContent = `${hoursAbove} h`;
-  document.getElementById("periodThresholdText").textContent = `Au-dessus de ${fmt(threshold)} kPa`;
+  document.getElementById("periodHoursAbove").textContent = `${hoursAbove2} h`;
   document.getElementById("dayMeanVpd").textContent = `${fmt(meanDay)} kPa`;
-  document.getElementById("meanVpdGap").textContent = `${meanGap >= 0 ? "+" : ""}${fmt(meanGap, 2)} kPa`;
-
-  const datasets = [];
-  if (source === "openmeteo" || source === "both") {
-    datasets.push({
-      label: "Open-Meteo",
-      data: rows.map((item) => item.vpd),
-      borderColor: "#7f1d2d",
-      backgroundColor: "rgba(127,29,45,.08)",
-      tension: .22,
-      pointRadius: 1.5
-    });
-  }
-  if (source === "sam" || source === "both") {
-    datasets.push({
-      label: "Station SAM simulée",
-      data: rows.map((item) => item.vpdSam),
-      borderColor: "#3f6f93",
-      backgroundColor: "rgba(63,111,147,.08)",
-      tension: .22,
-      pointRadius: 1.5
-    });
-  }
-  datasets.push({
-    label: `Seuil ${fmt(threshold)} kPa`,
-    data: rows.map(() => threshold),
-    borderColor: "#a86516",
-    borderDash: [6, 5],
-    pointRadius: 0,
-    borderWidth: 1.5
-  });
+  document.getElementById("periodHoursVeryHigh").textContent = `${hoursAbove3} h`;
 
   destroyChart("vpd");
   state.charts.vpd = new Chart(document.getElementById("vpdChart"), {
     type: "line",
-    data: { labels: rows.map((item) => dateLabel(item.time)), datasets },
+    data: {
+      labels: rows.map((item) => dateLabel(item.time)),
+      datasets: [{
+        label: "VPD Open-Meteo",
+        data: rows.map((item) => item.vpd),
+        borderColor: "#7f1d2d",
+        backgroundColor: "rgba(127,29,45,.06)",
+        tension: .22,
+        pointRadius: 1.5,
+        fill: false
+      }]
+    },
     options: {
       ...chartBase,
+      plugins: {
+        ...chartBase.plugins,
+        vpdBands: { enabled: true }
+      },
       scales: {
         ...chartBase.scales,
         y: {
           ...chartBase.scales.y,
+          suggestedMax: 4,
           title: { display: true, text: "VPD (kPa)" }
         }
       }
     }
   });
 
-  const thresholds = [1, 1.5, 2, 2.5, 3];
+  const thresholds = [1, 2, 3];
   destroyChart("threshold");
   state.charts.threshold = new Chart(document.getElementById("thresholdChart"), {
     type: "bar",
     data: {
-      labels: thresholds.map((value) => `>${fmt(value)} kPa`),
+      labels: ["VPD ≥ 1 kPa", "VPD ≥ 2 kPa", "VPD ≥ 3 kPa"],
       datasets: [{
         label: `Heures cumulées sur ${hours} h`,
-        data: thresholds.map((value) => rows.filter((item) => item.vpd > value).length),
-        backgroundColor: "rgba(127,29,45,.74)",
+        data: thresholds.map((value) => rows.filter((item) => item.vpd >= value).length),
+        backgroundColor: [
+          "rgba(218,166,49,.72)",
+          "rgba(218,112,49,.72)",
+          "rgba(164,58,58,.72)"
+        ],
         borderRadius: 5
       }]
     },
@@ -466,38 +476,42 @@ function renderVpd() {
 
   document.getElementById("vpdReading").innerHTML = `
     <div class="reading-item">
-      <strong>${vpdClass(max.vpd)}</strong>
-      Le maximum attendu est de ${fmt(max.vpd)} kPa le ${dateLabel(max.time)}.
+      <strong>0 à moins de 1 kPa — demande faible</strong>
+      L’atmosphère exerce une demande évaporative limitée.
     </div>
     <div class="reading-item">
-      <strong>Durée d’exposition</strong>
-      ${hoursAbove} heure(s) dépassent le seuil sélectionné de ${fmt(threshold)} kPa.
+      <strong>1 à moins de 2 kPa — demande modérée</strong>
+      La transpiration est stimulée et la sensibilité stomatique devient plus importante.
     </div>
     <div class="reading-item">
-      <strong>Prudence d’interprétation</strong>
-      Un VPD élevé indique une forte demande atmosphérique, mais ne suffit pas à diagnostiquer
-      un stress hydrique de l’arbre.
+      <strong>2 à moins de 3 kPa — demande élevée</strong>
+      La fermeture stomatique et la limitation des échanges deviennent plus probables.
+    </div>
+    <div class="reading-item">
+      <strong>3 kPa et plus — demande très élevée</strong>
+      La contrainte atmosphérique est forte, surtout si l’eau du sol est limitante.
+    </div>
+    <div class="reading-item">
+      <strong>Maximum prévu</strong>
+      ${fmt(max.vpd)} kPa le ${dateLabel(max.time)} ; ${hoursAbove2} h à au moins 2 kPa,
+      dont ${hoursAbove3} h à au moins 3 kPa.
     </div>
   `;
 }
 
 function renderDeficit() {
   const days = Number(document.getElementById("deficitPeriod").value);
-  const efficiency = Number(document.getElementById("rainEfficiency").value);
-  const resetMode = document.getElementById("resetMode").value;
-  const result = computeDeficit(pastDays(days), efficiency, resetMode);
+  const result = computeDeficit(pastDays(days), 1, "balance");
   if (!result.length) return;
 
   const et0 = result.reduce((sum, item) => sum + item.et0, 0);
   const rain = result.reduce((sum, item) => sum + item.rain, 0);
-  const effectiveRain = rain * efficiency;
   const finalDeficit = result.at(-1).cumulative;
   const last7 = result.slice(-7);
   const weekChange = last7.reduce((sum, item) => sum + item.balance, 0);
 
   document.getElementById("et0Total").textContent = `${fmt(et0)} mm`;
   document.getElementById("rainTotal").textContent = `${fmt(rain)} mm`;
-  document.getElementById("effectiveRainTotal").textContent = `${fmt(effectiveRain)} mm efficaces`;
   document.getElementById("deficitTotal").textContent = `${fmt(finalDeficit)} mm`;
   document.getElementById("deficitWeekChange").textContent =
     `${weekChange >= 0 ? "+" : ""}${fmt(weekChange)} mm`;
@@ -555,58 +569,14 @@ function renderDeficit() {
   });
 }
 
-function renderComparison() {
-  const rows = futureSlice(48);
-  if (!rows.length) return;
-
-  const meanVpdGap = rows.reduce((sum, item) => sum + (item.vpdSam - item.vpd), 0) / rows.length;
-  const maxVpdGap = Math.max(...rows.map((item) => Math.abs(item.vpdSam - item.vpd)));
-  const meanTempGap = rows.reduce((sum, item) => sum + (item.temperatureSam - item.temperature), 0) / rows.length;
-  const meanRhGap = rows.reduce((sum, item) => sum + (item.humiditySam - item.humidity), 0) / rows.length;
-
-  document.getElementById("comparisonMeanGap").textContent =
-    `${meanVpdGap >= 0 ? "+" : ""}${fmt(meanVpdGap, 2)} kPa`;
-  document.getElementById("comparisonMaxGap").textContent = `${fmt(maxVpdGap, 2)} kPa`;
-  document.getElementById("comparisonTempGap").textContent =
-    `${meanTempGap >= 0 ? "+" : ""}${fmt(meanTempGap, 1)} °C`;
-  document.getElementById("comparisonRhGap").textContent =
-    `${meanRhGap >= 0 ? "+" : ""}${fmt(meanRhGap, 1)} %`;
-
-  destroyChart("comparison");
-  state.charts.comparison = new Chart(document.getElementById("comparisonChart"), {
-    type: "line",
-    data: {
-      labels: rows.map((item) => dateLabel(item.time)),
-      datasets: [
-        {
-          label: "Open-Meteo",
-          data: rows.map((item) => item.vpd),
-          borderColor: "#7f1d2d",
-          tension: .22,
-          pointRadius: 1.5
-        },
-        {
-          label: "Station SAM simulée",
-          data: rows.map((item) => item.vpdSam),
-          borderColor: "#3f6f93",
-          tension: .22,
-          pointRadius: 1.5
-        }
-      ]
-    },
-    options: chartBase
-  });
-}
-
 function renderAll() {
   renderDashboard();
   renderVpd();
   renderDeficit();
-  renderComparison();
 }
 
 function initControls() {
-  ["vpdPeriod", "vpdThreshold", "vpdSource"].forEach((id) => {
+  ["vpdPeriod"].forEach((id) => {
     document.getElementById(id).addEventListener("change", () => {
       if (!state.hourly.length) return;
       renderVpd();
@@ -614,7 +584,7 @@ function initControls() {
     });
   });
 
-  ["deficitPeriod", "rainEfficiency", "resetMode"].forEach((id) => {
+  ["deficitPeriod"].forEach((id) => {
     document.getElementById(id).addEventListener("change", () => {
       if (!state.hourly.length) return;
       renderDeficit();

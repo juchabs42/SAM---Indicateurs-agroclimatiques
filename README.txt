@@ -15,8 +15,7 @@ FONCTIONNALITÉS
 - VPD horaire ;
 - nombre d’heures au-dessus de plusieurs seuils ;
 - déficit climatique cumulé ;
-- réglage de la pluie efficace ;
-- comparaison Open-Meteo / station SAM simulée ;
+- prise en compte de 100 % de la pluie ;
 - affichage adapté aux téléphones.
 
 DONNÉES UTILISÉES
@@ -35,7 +34,6 @@ Il demande :
 - 7 jours de prévision ;
 - le fuseau horaire automatique.
 
-La station SAM est simulée dans app.js. Elle ne correspond pas à une station réelle.
 
 MISE EN LIGNE SUR GITHUB PAGES
 ------------------------------
@@ -73,9 +71,7 @@ CALCUL DU DÉFICIT CLIMATIQUE
 Calcul quotidien :
 ET0 - pluie × coefficient de pluie efficace
 
-Deux comportements sont proposés :
-1. bloquer le cumul à zéro ;
-2. autoriser un bilan négatif.
+Le calcul prend en compte 100 % de la pluie et autorise un bilan négatif.
 
 Le nom recommandé est « déficit climatique cumulé ».
 Ce calcul ne représente pas le stock hydrique réel du sol.
@@ -85,16 +81,13 @@ LIMITES
 - Open-Meteo fournit une donnée modélisée, pas une mesure dans le verger.
 - Le VPD seul ne permet pas de conclure à un stress hydrique.
 - Le déficit climatique n’intègre pas le sol, l’enracinement, le Kc ou l’irrigation.
-- La comparaison avec la station SAM est fictive dans ce prototype.
+ 
+SEUILS VPD UTILISÉS
+-------------------
+- moins de 1 kPa : demande atmosphérique faible ;
+- 1 à moins de 2 kPa : demande modérée ;
+- 2 à moins de 3 kPa : demande élevée ;
+- 3 kPa et plus : demande très élevée.
 
-INTÉGRATION FUTURE DANS SAM
----------------------------
-Il faudra remplacer la fonction simulateSam() par un appel à la base de données
-ou à l’API des stations SAM.
-
-La logique peut ensuite :
-- sélectionner automatiquement la station la plus proche ;
-- comparer mesure et modèle ;
-- utiliser Open-Meteo comme solution de secours ;
-- afficher la qualité des données ;
-- déclencher des alertes selon des règles validées.
+Ces classes sont des repères opérationnels et non des seuils universels de stress.
+La réponse varie selon l’espèce, le cultivar, le rayonnement et l’état hydrique du sol.
