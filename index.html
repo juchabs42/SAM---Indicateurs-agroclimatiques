@@ -170,29 +170,6 @@
         </label>
       </div>
 
-      <div class="metric-grid">
-        <article class="metric-card">
-          <p>Maximum de la période</p>
-          <strong id="periodMaxVpd">—</strong>
-          <span id="periodMaxTime">—</span>
-        </article>
-        <article class="metric-card">
-          <p>Heures avec VPD ≥ 2 kPa</p>
-          <strong id="periodHoursAbove">—</strong>
-          <span>Demande élevée ou très élevée</span>
-        </article>
-        <article class="metric-card">
-          <p>VPD moyen diurne</p>
-          <strong id="dayMeanVpd">—</strong>
-          <span>Entre 8 h et 20 h</span>
-        </article>
-        <article class="metric-card">
-          <p>Heures avec VPD ≥ 3 kPa</p>
-          <strong id="periodHoursVeryHigh">—</strong>
-          <span>Demande atmosphérique très élevée</span>
-        </article>
-      </div>
-
       <article class="panel">
         <div class="panel-header">
           <div>
@@ -207,7 +184,7 @@
 
       <div class="two-columns">
         <article class="panel">
-          <h3>Heures cumulées au-dessus des seuils</h3>
+          <h3>Durées cumulées selon les seuils de DPV</h3>
           <div class="chart-wrap">
             <canvas id="thresholdChart"></canvas>
           </div>
@@ -219,8 +196,8 @@
             Chargez une position pour afficher l’analyse.
           </div>
           <p class="small-note">
-            Ces classes sont des repères opérationnels. Elles ne constituent pas des seuils
-            universels de stress, car la réponse dépend notamment de l’espèce, du cultivar et de l’état hydrique du sol.
+            Les bandes suivent la grille opérationnelle retenue pour le prototype. Elles servent à visualiser
+            la durée d’exposition à différents niveaux de demande et de contrainte atmosphérique.
           </p>
         </article>
       </div>

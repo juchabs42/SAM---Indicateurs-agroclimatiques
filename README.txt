@@ -82,12 +82,18 @@ LIMITES
 - Le VPD seul ne permet pas de conclure à un stress hydrique.
 - Le déficit climatique n’intègre pas le sol, l’enracinement, le Kc ou l’irrigation.
  
-SEUILS VPD UTILISÉS
--------------------
-- moins de 1 kPa : demande atmosphérique faible ;
-- 1 à moins de 2 kPa : demande modérée ;
-- 2 à moins de 3 kPa : demande élevée ;
-- 3 kPa et plus : demande très élevée.
+SEUILS DPV UTILISÉS
+--------------------
+- 0 à 1,0 kPa : faible demande atmosphérique ;
+- 1,0 à 1,5 kPa : conditions favorables ;
+- 1,5 à 2,5 kPa : début de régulation stomatique ;
+- 2,5 à 3,5 kPa : contrainte atmosphérique élevée ;
+- 3,5 à 4,5 kPa : stress sévère ;
+- plus de 4,5 kPa : stress extrême.
 
-Ces classes sont des repères opérationnels et non des seuils universels de stress.
-La réponse varie selon l’espèce, le cultivar, le rayonnement et l’état hydrique du sol.
+HEURES CUMULÉES
+---------------
+- DPV > 1,5 kPa : durée de régulation stomatique potentielle ;
+- DPV > 2,5 kPa : durée de contrainte atmosphérique importante ;
+- DPV > 3,5 kPa : durée de stress sévère ;
+- DPV > 4,5 kPa : durée de stress extrême.

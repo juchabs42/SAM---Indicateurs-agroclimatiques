@@ -44,10 +44,12 @@ const vpdBandsPlugin = {
     if (!y) return;
 
     const bands = [
-      { min: 0, max: 1, color: "rgba(73, 118, 91, 0.13)" },
-      { min: 1, max: 2, color: "rgba(218, 166, 49, 0.13)" },
-      { min: 2, max: 3, color: "rgba(218, 112, 49, 0.14)" },
-      { min: 3, max: Math.max(5, y.max), color: "rgba(164, 58, 58, 0.13)" }
+      { min: 0, max: 1.0, color: "rgba(72, 149, 239, 0.16)" },
+      { min: 1.0, max: 1.5, color: "rgba(82, 183, 136, 0.16)" },
+      { min: 1.5, max: 2.5, color: "rgba(248, 196, 62, 0.18)" },
+      { min: 2.5, max: 3.5, color: "rgba(244, 140, 54, 0.18)" },
+      { min: 3.5, max: 4.5, color: "rgba(214, 69, 65, 0.18)" },
+      { min: 4.5, max: Math.max(6, y.max), color: "rgba(83, 52, 131, 0.18)" }
     ];
 
     ctx.save();
@@ -89,10 +91,12 @@ function dayLabel(iso) {
 
 function vpdClass(vpd) {
   if (!Number.isFinite(vpd)) return "Donnée indisponible";
-  if (vpd < 1) return "Demande atmosphérique faible";
-  if (vpd < 2) return "Demande atmosphérique modérée";
-  if (vpd < 3) return "Demande atmosphérique élevée";
-  return "Demande atmosphérique très élevée";
+  if (vpd < 1.0) return "Faible demande atmosphérique";
+  if (vpd < 1.5) return "Conditions favorables";
+  if (vpd < 2.5) return "Début de régulation stomatique";
+  if (vpd < 3.5) return "Contrainte atmosphérique élevée";
+  if (vpd < 4.5) return "Stress sévère";
+  return "Stress extrême";
 }
 
 function destroyChart(name) {
@@ -408,19 +412,15 @@ function renderVpd() {
   if (!rows.length) return;
 
   const max = rows.reduce((a, b) => b.vpd > a.vpd ? b : a, rows[0]);
-  const hoursAbove2 = rows.filter((item) => item.vpd >= 2).length;
-  const hoursAbove3 = rows.filter((item) => item.vpd >= 3).length;
+  const hoursAbove15 = rows.filter((item) => item.vpd > 1.5).length;
+  const hoursAbove25 = rows.filter((item) => item.vpd > 2.5).length;
+  const hoursAbove35 = rows.filter((item) => item.vpd > 3.5).length;
+  const hoursAbove45 = rows.filter((item) => item.vpd > 4.5).length;
   const daytime = rows.filter((item) => {
     const hour = new Date(item.time).getHours();
     return hour >= 8 && hour < 20;
   });
   const meanDay = daytime.reduce((sum, item) => sum + item.vpd, 0) / Math.max(1, daytime.length);
-
-  document.getElementById("periodMaxVpd").textContent = `${fmt(max.vpd)} kPa`;
-  document.getElementById("periodMaxTime").textContent = dateLabel(max.time);
-  document.getElementById("periodHoursAbove").textContent = `${hoursAbove2} h`;
-  document.getElementById("dayMeanVpd").textContent = `${fmt(meanDay)} kPa`;
-  document.getElementById("periodHoursVeryHigh").textContent = `${hoursAbove3} h`;
 
   destroyChart("vpd");
   state.charts.vpd = new Chart(document.getElementById("vpdChart"), {
@@ -447,54 +447,81 @@ function renderVpd() {
         ...chartBase.scales,
         y: {
           ...chartBase.scales.y,
-          suggestedMax: 4,
+          suggestedMax: 5.5,
           title: { display: true, text: "VPD (kPa)" }
         }
       }
     }
   });
 
-  const thresholds = [1, 2, 3];
+  const thresholds = [1.5, 2.5, 3.5, 4.5];
   destroyChart("threshold");
   state.charts.threshold = new Chart(document.getElementById("thresholdChart"), {
     type: "bar",
     data: {
-      labels: ["VPD ≥ 1 kPa", "VPD ≥ 2 kPa", "VPD ≥ 3 kPa"],
+      labels: [
+        "> 1,5 kPa — régulation stomatique",
+        "> 2,5 kPa — contrainte importante",
+        "> 3,5 kPa — stress sévère",
+        "> 4,5 kPa — stress extrême"
+      ],
       datasets: [{
         label: `Heures cumulées sur ${hours} h`,
-        data: thresholds.map((value) => rows.filter((item) => item.vpd >= value).length),
+        data: thresholds.map((value) => rows.filter((item) => item.vpd > value).length),
         backgroundColor: [
-          "rgba(218,166,49,.72)",
-          "rgba(218,112,49,.72)",
-          "rgba(164,58,58,.72)"
+          "rgba(248, 196, 62, 0.78)",
+          "rgba(244, 140, 54, 0.78)",
+          "rgba(214, 69, 65, 0.78)",
+          "rgba(83, 52, 131, 0.78)"
         ],
         borderRadius: 5
       }]
     },
-    options: chartBase
+    options: {
+      ...chartBase,
+      indexAxis: "y",
+      scales: {
+        x: {
+          beginAtZero: true,
+          title: { display: true, text: "Nombre d’heures" },
+          grid: { color: "rgba(101,114,126,.13)" }
+        },
+        y: {
+          grid: { display: false }
+        }
+      }
+    }
   });
 
   document.getElementById("vpdReading").innerHTML = `
     <div class="reading-item">
-      <strong>0 à moins de 1 kPa — demande faible</strong>
-      L’atmosphère exerce une demande évaporative limitée.
+      <strong>Bleu — 0 à 1,0 kPa</strong>
+      Faible demande atmosphérique.
     </div>
     <div class="reading-item">
-      <strong>1 à moins de 2 kPa — demande modérée</strong>
-      La transpiration est stimulée et la sensibilité stomatique devient plus importante.
+      <strong>Vert — 1,0 à 1,5 kPa</strong>
+      Conditions favorables.
     </div>
     <div class="reading-item">
-      <strong>2 à moins de 3 kPa — demande élevée</strong>
-      La fermeture stomatique et la limitation des échanges deviennent plus probables.
+      <strong>Jaune — 1,5 à 2,5 kPa</strong>
+      Début de régulation stomatique.
     </div>
     <div class="reading-item">
-      <strong>3 kPa et plus — demande très élevée</strong>
-      La contrainte atmosphérique est forte, surtout si l’eau du sol est limitante.
+      <strong>Orange — 2,5 à 3,5 kPa</strong>
+      Contrainte atmosphérique élevée.
     </div>
     <div class="reading-item">
-      <strong>Maximum prévu</strong>
-      ${fmt(max.vpd)} kPa le ${dateLabel(max.time)} ; ${hoursAbove2} h à au moins 2 kPa,
-      dont ${hoursAbove3} h à au moins 3 kPa.
+      <strong>Rouge — 3,5 à 4,5 kPa</strong>
+      Stress sévère.
+    </div>
+    <div class="reading-item">
+      <strong>Violet foncé — au-dessus de 4,5 kPa</strong>
+      Stress extrême.
+    </div>
+    <div class="reading-item">
+      <strong>Durées cumulées sur la période</strong>
+      ${hoursAbove15} h au-dessus de 1,5 kPa ; ${hoursAbove25} h au-dessus de 2,5 kPa ;
+      ${hoursAbove35} h au-dessus de 3,5 kPa ; ${hoursAbove45} h au-dessus de 4,5 kPa.
     </div>
   `;
 }
