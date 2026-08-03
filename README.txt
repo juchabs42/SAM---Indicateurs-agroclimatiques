@@ -12,13 +12,12 @@ FONCTIONNALITÉS
 - géolocalisation automatique ou coordonnées manuelles ;
 - DPV horaire avec bandes colorées ;
 - heures cumulées > 1,5 / 2,5 / 3,5 / 4,5 kPa ;
-- charge DPV cumulée en kPa·h ;
 - indice de contrainte climatique journalier de 0 à 100 ;
-- fenêtre prévisionnelle d’irrigation ;
+- fenêtre d’irrigation par créneaux de 3 h pour le lendemain ;
 - heures > 35 °C ;
 - nuits tropicales ;
 - heures potentiellement favorables à la photosynthèse ;
-- humectation foliaire estimée ;
+- heures humides estimées ;
 - ET0 et déficit climatique historique.
 
 INDICE DE CONTRAINTE JOURNALIER
