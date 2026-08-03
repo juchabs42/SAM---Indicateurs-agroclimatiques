@@ -3,29 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Prototype Sud Agro Météo : VPD horaire, heures au-dessus des seuils et déficit climatique cumulé.">
+  <meta name="description" content="Prototype Sud Agro Météo : indicateurs agroclimatiques prévisionnels.">
   <meta name="theme-color" content="#7f1d2d">
-  <title>Indicateurs agroclimatiques — Sud Agro Météo</title>
+  <title>Indicateurs agroclimatiques V2 — Sud Agro Météo</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark" aria-hidden="true">S</div>
+      <div class="brand-mark">S</div>
       <div>
         <p class="brand-kicker">Sud Agro Météo</p>
-        <h1>Indicateurs agroclimatiques</h1>
+        <h1>Indicateurs agroclimatiques V2</h1>
       </div>
     </div>
 
-    <button id="menuButton" class="menu-button" type="button" aria-expanded="false" aria-controls="mainNav">
-      Menu
-    </button>
+    <button id="menuButton" class="menu-button" type="button" aria-expanded="false">Menu</button>
 
-    <nav id="mainNav" class="main-nav" aria-label="Navigation principale">
+    <nav id="mainNav" class="main-nav">
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
-      <button class="nav-link" data-section="vpd">VPD horaire</button>
+      <button class="nav-link" data-section="vpd">DPV</button>
+      <button class="nav-link" data-section="contrainte">Indice climatique</button>
+      <button class="nav-link" data-section="irrigation">Irrigation</button>
+      <button class="nav-link" data-section="autres">Autres indicateurs</button>
       <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
     </nav>
@@ -34,133 +35,82 @@
   <main>
     <section class="location-panel">
       <div>
-        <p class="eyebrow">Localisation des indicateurs</p>
-        <h2 id="locationTitle">Choisissez une position</h2>
-        <p id="locationDetails">La position sert à récupérer automatiquement les données Open-Meteo.</p>
+        <p class="eyebrow">Localisation</p>
+        <h2 id="locationTitle">Position de démonstration</h2>
+        <p id="locationDetails">Les données sont récupérées automatiquement depuis Open-Meteo.</p>
       </div>
-
       <div class="location-actions">
-        <button id="geolocateButton" class="primary-button" type="button">Trouver ma position</button>
-        <button id="manualButton" class="secondary-button" type="button">Saisir des coordonnées</button>
+        <button id="geolocateButton" class="primary-button">Trouver ma position</button>
+        <button id="manualButton" class="secondary-button">Saisir des coordonnées</button>
       </div>
-
       <form id="manualLocationForm" class="manual-form hidden">
-        <label>
-          Latitude
-          <input id="latitudeInput" type="number" min="-90" max="90" step="0.0001" value="43.6077" required>
-        </label>
-        <label>
-          Longitude
-          <input id="longitudeInput" type="number" min="-180" max="180" step="0.0001" value="4.0122" required>
-        </label>
-        <button class="primary-button" type="submit">Charger les données</button>
+        <label>Latitude<input id="latitudeInput" type="number" step="0.0001" value="43.6077" required></label>
+        <label>Longitude<input id="longitudeInput" type="number" step="0.0001" value="4.0122" required></label>
+        <button class="primary-button" type="submit">Charger</button>
       </form>
-
-      <div id="locationMessage" class="status-message" role="status"></div>
+      <div id="locationMessage" class="status-message"></div>
     </section>
 
     <div id="loadingPanel" class="loading-panel hidden">
-      <span class="spinner" aria-hidden="true"></span>
-      Chargement des données météorologiques…
+      <span class="spinner"></span>Chargement des données météorologiques…
     </div>
 
     <section id="dashboard" class="page-section active">
       <div class="hero">
         <div>
-          <p class="eyebrow">Synthèse agroclimatique</p>
-          <h2>Visualiser la demande atmosphérique et l’évolution du déficit climatique</h2>
-          <p>
-            Les indicateurs sont calculés automatiquement à partir des données horaires
-            Open-Meteo et de la position sélectionnée.
-          </p>
+          <p class="eyebrow">Prévision agroclimatique</p>
+          <h2>Transformer la météo en indicateurs directement utilisables</h2>
+          <p>Les données brutes sont converties en niveaux de demande atmosphérique, contraintes journalières et fenêtres d’intervention.</p>
         </div>
-        <div class="hero-badge">
-          <span class="status-dot"></span>
-          Prototype agroclimatique
-        </div>
-      </div>
-
-      <div class="notice">
-        <strong>À distinguer :</strong>
-        le VPD décrit la demande évaporative de l’air. Le déficit climatique cumulé
-        correspond ici à ET₀ moins pluie efficace ; il ne représente pas directement
-        le stock d’eau réel du sol.
+        <div class="hero-badge"><span class="status-dot"></span>Prototype V2</div>
       </div>
 
       <div class="summary-grid">
-        <article class="summary-card">
-          <p>VPD actuel</p>
-          <strong id="currentVpd">—</strong>
-          <span id="currentVpdClass">—</span>
+        <article class="summary-card score-card">
+          <p>Indice de contrainte aujourd’hui</p>
+          <strong id="todayScore">—</strong>
+          <span id="todayScoreLabel">—</span>
         </article>
         <article class="summary-card">
-          <p>Maximum sur 24 h</p>
-          <strong id="maxVpd24">—</strong>
-          <span id="maxVpdTime">—</span>
+          <p>DPV maximal aujourd’hui</p>
+          <strong id="todayMaxVpd">—</strong>
+          <span id="todayVpdLabel">—</span>
         </article>
         <article class="summary-card">
-          <p>Heures au-dessus du seuil</p>
-          <strong id="hoursAbove">—</strong>
-          <span id="hoursThresholdLabel">—</span>
+          <p>Meilleure fenêtre d’irrigation</p>
+          <strong id="bestWindow">—</strong>
+          <span id="bestWindowDetails">—</span>
         </article>
         <article class="summary-card">
-          <p>Déficit sur 30 jours</p>
-          <strong id="deficit30">—</strong>
-          <span>ET₀ − pluie efficace</span>
+          <p>Déficit climatique sur 30 jours</p>
+          <strong id="dashboardDeficit">—</strong>
+          <span>ET₀ − pluie</span>
         </article>
       </div>
 
       <div class="dashboard-grid">
         <article class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">Prochaines 48 heures</p>
-              <h3>VPD horaire</h3>
-            </div>
-            <button class="text-button" data-go="vpd">Voir le détail</button>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="dashboardVpdChart"></canvas>
-          </div>
+          <div class="panel-header"><div><p class="panel-kicker">7 prochains jours</p><h3>Indice de contrainte climatique</h3></div></div>
+          <div class="chart-wrap"><canvas id="dashboardScoreChart"></canvas></div>
         </article>
-
         <article class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="panel-kicker">30 derniers jours</p>
-              <h3>Déficit climatique cumulé</h3>
-            </div>
-            <button class="text-button" data-go="deficit">Voir le détail</button>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="dashboardDeficitChart"></canvas>
-          </div>
+          <div class="panel-header"><div><p class="panel-kicker">48 prochaines heures</p><h3>DPV horaire</h3></div></div>
+          <div class="chart-wrap"><canvas id="dashboardVpdChart"></canvas></div>
         </article>
       </div>
-
-      <article class="interpretation-box">
-        <h3>Lecture rapide</h3>
-        <p id="dashboardInterpretation">
-          Chargez une position pour générer automatiquement les indicateurs.
-        </p>
-      </article>
     </section>
 
     <section id="vpd" class="page-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Demande évaporative de l’air</p>
-          <h2>VPD horaire et durée d’exposition</h2>
-          <p>
-            Le graphique distingue les données passées et les prévisions. Les bandes colorées
-            correspondent à quatre classes fixes de demande atmosphérique.
-          </p>
+          <p class="eyebrow">Demande atmosphérique</p>
+          <h2>DPV horaire et charge cumulée</h2>
+          <p>Les bandes suivent les seuils définis pour le prototype SudExpé.</p>
         </div>
       </div>
 
       <div class="controls">
-        <label>
-          Période affichée
+        <label>Période
           <select id="vpdPeriod">
             <option value="24">24 heures</option>
             <option value="48" selected>48 heures</option>
@@ -171,165 +121,125 @@
       </div>
 
       <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="panel-kicker">Série horaire</p>
-            <h3>VPD observé et prévu</h3>
-          </div>
-        </div>
-        <div class="chart-wrap large">
-          <canvas id="vpdChart"></canvas>
-        </div>
+        <div class="chart-wrap large"><canvas id="vpdChart"></canvas></div>
       </article>
 
       <div class="two-columns">
         <article class="panel">
-          <h3>Durées cumulées selon les seuils de DPV</h3>
-          <div class="chart-wrap">
-            <canvas id="thresholdChart"></canvas>
-          </div>
+          <h3>Heures cumulées au-dessus des seuils</h3>
+          <div class="chart-wrap"><canvas id="thresholdChart"></canvas></div>
         </article>
-
         <article class="panel">
-          <h3>Interprétation proposée</h3>
-          <div id="vpdReading" class="reading-card">
-            Chargez une position pour afficher l’analyse.
-          </div>
-          <p class="small-note">
-            Les bandes suivent la grille opérationnelle retenue pour le prototype. Elles servent à visualiser
-            la durée d’exposition à différents niveaux de demande et de contrainte atmosphérique.
-          </p>
+          <h3>Charge DPV cumulée</h3>
+          <div class="metric-large"><strong id="vpdLoad">—</strong><span>Somme horaire de DPV − 1,5 kPa lorsque DPV > 1,5 kPa</span></div>
+          <div id="vpdReading" class="reading-card"></div>
         </article>
+      </div>
+    </section>
+
+    <section id="contrainte" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Indice synthétique</p>
+          <h2>Indice de contrainte climatique journalier</h2>
+          <p>Score de 0 à 100 combinant DPV, durée de contrainte, température maximale et ET₀.</p>
+        </div>
+      </div>
+
+      <div class="score-legend">
+        <span class="score-low">0–24 Faible</span>
+        <span class="score-moderate">25–49 Modérée</span>
+        <span class="score-high">50–74 Élevée</span>
+        <span class="score-severe">75–89 Sévère</span>
+        <span class="score-extreme">90–100 Extrême</span>
+      </div>
+
+      <article class="panel">
+        <div class="chart-wrap large"><canvas id="scoreChart"></canvas></div>
+      </article>
+
+      <div id="scoreCards" class="forecast-grid"></div>
+    </section>
+
+    <section id="irrigation" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Fenêtres horaires</p>
+          <h2>Meilleures périodes prévisionnelles pour irriguer</h2>
+          <p>Classement basé sur le DPV, le vent, la température et l’absence de pluie prévue.</p>
+        </div>
+      </div>
+      <article class="panel">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Période</th><th>Qualité</th><th>DPV</th><th>Vent</th><th>Température</th><th>Pluie</th></tr></thead>
+            <tbody id="irrigationTable"></tbody>
+          </table>
+        </div>
+      </article>
+      <div class="warning-box"><strong>À interpréter :</strong> cette fenêtre concerne surtout les pertes atmosphériques et les conditions d’application. Elle ne détermine pas à elle seule la dose d’irrigation.</div>
+    </section>
+
+    <section id="autres" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Indicateurs complémentaires</p>
+          <h2>Chaleur, nuits chaudes, photosynthèse et humectation</h2>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
+        <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
+        <article class="metric-card"><p>Heures favorables</p><strong id="photoHours">—</strong><span>Température 18–30 °C, DPV 1–1,5 kPa, rayonnement > 100 W/m²</span></article>
+        <article class="metric-card"><p>Humectation estimée</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="panel"><h3>Heures chaudes par jour</h3><div class="chart-wrap"><canvas id="heatChart"></canvas></div></article>
+        <article class="panel"><h3>Humectation foliaire estimée</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
       </div>
     </section>
 
     <section id="deficit" class="page-section">
       <div class="section-heading">
-        <div>
-          <p class="eyebrow">Bilan climatique simplifié</p>
-          <h2>Déficit climatique cumulé</h2>
-          <p>
-            Le calcul cumule l’ET₀ et retranche 100 % de la pluie mesurée.
-            Le bilan peut devenir négatif lorsque les pluies dépassent la demande climatique.
-          </p>
-        </div>
+        <div><p class="eyebrow">Bilan climatique</p><h2>Déficit climatique cumulé</h2><p>ET₀ moins 100 % de la pluie, sans remise à zéro.</p></div>
       </div>
-
       <div class="controls">
-        <label>
-          Période
+        <label>Période
           <select id="deficitPeriod">
-            <option value="7">7 derniers jours</option>
-            <option value="14">14 derniers jours</option>
-            <option value="30" selected>30 derniers jours</option>
+            <option value="7">7 jours</option>
+            <option value="14">14 jours</option>
+            <option value="30" selected>30 jours</option>
           </select>
         </label>
       </div>
-
       <div class="metric-grid">
-        <article class="metric-card">
-          <p>ET₀ cumulée</p>
-          <strong id="et0Total">—</strong>
-          <span>Période sélectionnée</span>
-        </article>
-        <article class="metric-card">
-          <p>Pluie totale</p>
-          <strong id="rainTotal">—</strong>
-          <span>100 % de la pluie prise en compte</span>
-        </article>
-        <article class="metric-card">
-          <p>Déficit cumulé</p>
-          <strong id="deficitTotal">—</strong>
-          <span>Indicateur climatique</span>
-        </article>
-        <article class="metric-card">
-          <p>Évolution sur 7 jours</p>
-          <strong id="deficitWeekChange">—</strong>
-          <span>Variation récente</span>
-        </article>
+        <article class="metric-card"><p>ET₀ cumulée</p><strong id="et0Total">—</strong><span>Période sélectionnée</span></article>
+        <article class="metric-card"><p>Pluie cumulée</p><strong id="rainTotal">—</strong><span>100 % prise en compte</span></article>
+        <article class="metric-card"><p>Bilan cumulé</p><strong id="deficitTotal">—</strong><span>ET₀ − pluie</span></article>
+        <article class="metric-card"><p>Variation sur 7 jours</p><strong id="deficitWeekChange">—</strong><span>Évolution récente</span></article>
       </div>
-
-      <article class="panel">
-        <div class="panel-header">
-          <div>
-            <p class="panel-kicker">Évolution quotidienne</p>
-            <h3>ET₀, pluie et déficit cumulé</h3>
-          </div>
-        </div>
-        <div class="chart-wrap large">
-          <canvas id="deficitChart"></canvas>
-        </div>
-      </article>
-
-      <div class="warning-box">
-        <strong>Limite agronomique :</strong>
-        ce calcul ne prend pas en compte la réserve utile du sol, l’enracinement,
-        le coefficient cultural, ni les irrigations. Il doit être nommé
-        « déficit climatique » et non « déficit hydrique de la parcelle ».
-      </div>
+      <article class="panel"><div class="chart-wrap large"><canvas id="deficitChart"></canvas></div></article>
     </section>
 
     <section id="methodes" class="page-section">
       <div class="section-heading">
-        <div>
-          <p class="eyebrow">Définitions et calculs</p>
-          <h2>Méthodes utilisées dans le prototype</h2>
-        </div>
+        <div><p class="eyebrow">Méthodes</p><h2>Définitions du prototype</h2></div>
       </div>
-
       <div class="method-grid">
-        <article class="method-card">
-          <span class="method-number">01</span>
-          <h3>VPD horaire</h3>
-          <p>
-            Le prototype utilise directement la variable horaire
-            « vapour_pressure_deficit » fournie par Open-Meteo, exprimée en kPa.
-          </p>
-        </article>
-
-        <article class="method-card">
-          <span class="method-number">02</span>
-          <h3>Heures au-dessus du seuil</h3>
-          <p>
-            Chaque valeur horaire supérieure au seuil choisi compte pour une heure.
-            Le seuil est modifiable dans l’interface.
-          </p>
-        </article>
-
-        <article class="method-card">
-          <span class="method-number">03</span>
-          <h3>Déficit climatique</h3>
-          <p>
-            Calcul journalier : ET₀ − pluie. Le résultat est ensuite cumulé
-            sans remise à zéro automatique.
-          </p>
-        </article>
-
-        <article class="method-card">
-          <span class="method-number">04</span>
-          <h3>Géolocalisation</h3>
-          <p>
-            Le navigateur demande l’autorisation d’accéder à la position. L’utilisateur
-            peut aussi saisir manuellement une latitude et une longitude.
-          </p>
-        </article>
+        <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
+        <article class="method-card"><h3>Charge DPV</h3><p>Somme de DPV − 1,5 kPa pour chaque heure où le DPV dépasse 1,5 kPa.</p></article>
+        <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
+        <article class="method-card"><h3>Humectation estimée</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
+        <article class="method-card"><h3>Heures favorables</h3><p>Température entre 18 et 30 °C, DPV entre 1 et 1,5 kPa et rayonnement supérieur à 100 W/m².</p></article>
+        <article class="method-card"><h3>Fenêtre d’irrigation</h3><p>Score horaire privilégiant un faible DPV, un vent faible, une température modérée et l’absence de pluie.</p></article>
       </div>
-
-      <article class="panel prototype-scope">
-        <h3>Évolutions à prévoir pour l’intégration à SAM</h3>
-        <ul>
-          <li>Historique saisonnier depuis une date agronomique définie.</li>
-          <li>Notifications en cas de VPD élevé pendant plusieurs heures.</li>
-          <li>Passage du déficit climatique au bilan cultural avec Kc et irrigation.</li>
-        </ul>
-      </article>
+      <div class="warning-box"><strong>Prototype :</strong> l’indice de contrainte et les règles associées doivent être validés agronomiquement avant diffusion opérationnelle.</div>
     </section>
   </main>
 
-  <footer>
-    <p>Prototype « Indicateurs agroclimatiques » — Sud Agro Météo.</p>
-    <p>Données météorologiques Open-Meteo.</p>
-  </footer>
+  <footer><p>Prototype Sud Agro Météo — Indicateurs agroclimatiques V2.</p><p>Données Open-Meteo.</p></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
