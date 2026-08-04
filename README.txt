@@ -15,7 +15,7 @@ FONCTIONNALITÉS
 - indice de contrainte climatique journalier de 0 à 100 ;
 - heures > 35 °C ;
 - nuits tropicales ;
-- heures potentiellement favorables à la photosynthèse ;
+- heures de conditions climatiques favorables ;
 - heures humides estimées ;
 - ET0 et déficit climatique historique.
 
@@ -50,7 +50,7 @@ Puis : Settings > Pages > Deploy from a branch > main > root.
 
 IMPORTANT
 ---------
-L’indice de contrainte, les heures humides estimées et les heures
+L’indice de contrainte, les heures humides estimées et les heures de conditions
 favorables sont des règles de prototype. Elles doivent être validées par SudExpé
 avant utilisation opérationnelle ou diffusion comme conseil agronomique.
 
@@ -73,9 +73,10 @@ MISE À JOUR V2.6
 ----------------
 La section « Lecture des bandes de DPV » est supprimée. Le graphique des heures cumulées occupe toute la largeur.
 
-MISE À JOUR — VERSION SANS IRRIGATION
---------------------------------------
-- suppression de l’onglet Irrigation ;
-- suppression de la carte « Meilleure fenêtre d’irrigation » ;
-- précision de la définition des heures de conditions favorables ;
-- déficit climatique cumulé autorisé à passer sous zéro lorsque la pluie cumulée dépasse l’ET0.
+NETTOYAGE FINAL
+---------------
+- module Irrigation supprimé ;
+- encart Meilleure fenêtre d’irrigation supprimé ;
+- fonction computeDeficit conservée et sécurisée ;
+- bilan cumulé autorisé sous zéro ;
+- heures de conditions favorables explicitées.

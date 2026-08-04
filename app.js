@@ -44,7 +44,6 @@ function scoreDay(day){
 function scoreLabel(s){if(s<25)return"Faible";if(s<50)return"Modérée";if(s<75)return"Élevée";if(s<90)return"Sévère";return"Extrême"}
 
 
-
 function initNav(){
  const links=document.querySelectorAll(".nav-link"),secs=document.querySelectorAll(".page-section"),menu=document.getElementById("mainNav"),btn=document.getElementById("menuButton");
  links.forEach(l=>l.addEventListener("click",()=>{secs.forEach(s=>s.classList.toggle("active",s.id===l.dataset.section));links.forEach(x=>x.classList.toggle("active",x===l));menu.classList.remove("open");window.scrollTo({top:0,behavior:"smooth"})}));
@@ -102,6 +101,21 @@ function renderScore(){
  scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
 }
 
+function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures de conditions favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
 
+function computeDeficit(days){
+ let cumulative=0;
+ return days.map(day=>{
+   const et0=Number(day.et0)||0;
+   const rain=Number(day.rain)||0;
+   cumulative+=et0-rain;
+   return {...day,et0,rain,cumulative};
+ });
+}
+function renderDeficit(){
+ const days=Number(deficitPeriod.value),rows=computeDeficit(pastDays(days));if(!rows.length)return;const et0=rows.reduce((s,d)=>s+d.et0,0),rain=rows.reduce((s,d)=>s+d.rain,0),last=rows.at(-1).cumulative,week=rows.slice(-7).reduce((s,d)=>s+d.et0-d.rain,0);
+ et0Total.textContent=`${fmt(et0)} mm`;rainTotal.textContent=`${fmt(rain)} mm`;deficitTotal.textContent=`${fmt(last)} mm`;deficitWeekChange.textContent=`${week>=0?"+":""}${fmt(week)} mm`;
+ destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>dayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",beginAtZero:false,grid:{drawOnChartArea:false}}}}})
+}
 function renderAll(){renderDashboard();renderVpd();renderScore();renderOthers();renderDeficit()}
 document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})
