@@ -43,17 +43,7 @@ function scoreDay(day){
 }
 function scoreLabel(s){if(s<25)return"Faible";if(s<50)return"Modérée";if(s<75)return"Élevée";if(s<90)return"Sévère";return"Extrême"}
 
-function irrigationQuality(x){
- let score=100;
- score-=Math.max(0,x.vpd-1)*22;
- score-=Math.max(0,x.wind-8)*4;
- score-=Math.max(0,x.temperature-25)*3;
- if(x.rain>0)score-=60;
- if(x.radiation>150)score-=10;
- if(score>=70)return{label:"Favorable",class:"badge-good",score};
- if(score>=45)return{label:"Acceptable",class:"badge-ok",score};
- return{label:"Défavorable",class:"badge-poor",score}
-}
+
 
 function initNav(){
  const links=document.querySelectorAll(".nav-link"),secs=document.querySelectorAll(".page-section"),menu=document.getElementById("mainNav"),btn=document.getElementById("menuButton");
@@ -77,7 +67,6 @@ function renderDashboard(){
  const fd=forecastDays().map(scoreDay),today=fd[0],next48=futureHours(48);
  if(!today)return;
  todayScore.textContent=`${today.score}/100`;todayScoreLabel.textContent=scoreLabel(today.score);todayMaxVpd.textContent=`${fmt(today.maxVpd)} kPa`;todayVpdLabel.textContent=vpdLabel(today.maxVpd);
- const now2=new Date(),tomorrow2=new Date(now2);tomorrow2.setDate(now2.getDate()+1);const target2=`${tomorrow2.getFullYear()}-${String(tomorrow2.getMonth()+1).padStart(2,"0")}-${String(tomorrow2.getDate()).padStart(2,"0")}`,tomorrowRows=state.hourly.filter(x=>x.time.startsWith(target2)),blocks2=[];for(let s=0;s<24;s+=3){const p=tomorrowRows.filter(x=>{const h=new Date(x.time).getHours();return h>=s&&h<s+3});if(!p.length)continue;const avg=k=>p.reduce((a,x)=>a+x[k],0)/p.length,o={start:s,end:s+3,vpd:avg("vpd"),wind:avg("wind"),temperature:avg("temperature"),rain:p.reduce((a,x)=>a+x.rain,0)};o.q=irrigationQuality(o);blocks2.push(o)}blocks2.sort((a,b)=>b.q.score-a.q.score);const best=blocks2[0];bestWindow.textContent=best?`${String(best.start).padStart(2,"0")} h – ${String(best.end).padStart(2,"0")} h`:"—";bestWindowDetails.textContent=best?`${best.q.label} · DPV ${fmt(best.vpd)} kPa · vent ${fmt(best.wind)} km/h`:"Prévision indisponible";
  const deficit=computeDeficit(pastDays(30));dashboardDeficit.textContent=`${fmt(deficit.at(-1)?.cumulative||0)} mm`;
 
  destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
@@ -113,15 +102,6 @@ function renderScore(){
  scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
 }
 
-function renderIrrigation(){const now=new Date(),tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);const target=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,"0")}-${String(tomorrow.getDate()).padStart(2,"0")}`;const rows=state.hourly.filter(x=>x.time.startsWith(target)),blocks=[];for(let start=0;start<24;start+=3){const part=rows.filter(x=>{const h=new Date(x.time).getHours();return h>=start&&h<start+3});if(!part.length)continue;const avg=key=>part.reduce((s,x)=>s+x[key],0)/part.length;const summary={start,end:start+3,vpd:avg("vpd"),wind:avg("wind"),temperature:avg("temperature"),rain:part.reduce((s,x)=>s+x.rain,0)};summary.q=irrigationQuality(summary);blocks.push(summary)}irrigationTable.innerHTML=blocks.map(x=>`<tr><td>${String(x.start).padStart(2,"0")} h – ${String(x.end).padStart(2,"0")} h</td><td><span class="badge ${x.q.class}">${x.q.label}</span></td><td>${fmt(x.vpd)} kPa</td><td>${fmt(x.wind)} km/h</td><td>${fmt(x.temperature)} °C</td><td>${fmt(x.rain)} mm</td></tr>`).join("")}
 
-function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures de conditions favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
-
-function computeDeficit(days){let c=0;return days.map(d=>{c+=d.et0-d.rain;return{...d,cumulative:c}})}
-function renderDeficit(){
- const days=Number(deficitPeriod.value),rows=computeDeficit(pastDays(days));if(!rows.length)return;const et0=rows.reduce((s,d)=>s+d.et0,0),rain=rows.reduce((s,d)=>s+d.rain,0),last=rows.at(-1).cumulative,week=rows.slice(-7).reduce((s,d)=>s+d.et0-d.rain,0);
- et0Total.textContent=`${fmt(et0)} mm`;rainTotal.textContent=`${fmt(rain)} mm`;deficitTotal.textContent=`${fmt(last)} mm`;deficitWeekChange.textContent=`${week>=0?"+":""}${fmt(week)} mm`;
- destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>dayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",grid:{drawOnChartArea:false}}}}})
-}
-function renderAll(){renderDashboard();renderVpd();renderScore();renderIrrigation();renderOthers();renderDeficit()}
+function renderAll(){renderDashboard();renderVpd();renderScore();renderOthers();renderDeficit()}
 document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})

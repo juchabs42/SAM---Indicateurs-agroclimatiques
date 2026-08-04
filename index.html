@@ -25,7 +25,6 @@
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
       <button class="nav-link" data-section="vpd">DPV</button>
       <button class="nav-link" data-section="contrainte">Indice climatique</button>
-      <button class="nav-link" data-section="irrigation">Irrigation</button>
       <button class="nav-link" data-section="autres">Autres indicateurs</button>
       <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
@@ -75,11 +74,6 @@
           <p>DPV maximal aujourd’hui</p>
           <strong id="todayMaxVpd">—</strong>
           <span id="todayVpdLabel">—</span>
-        </article>
-        <article class="summary-card">
-          <p>Meilleure fenêtre d’irrigation</p>
-          <strong id="bestWindow">—</strong>
-          <span id="bestWindowDetails">—</span>
         </article>
         <article class="summary-card">
           <p>Déficit climatique sur 30 jours</p>
@@ -170,37 +164,18 @@
       <div id="scoreCards" class="forecast-grid"></div>
     </section>
 
-    <section id="irrigation" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Fenêtres horaires</p>
-          <h2>Meilleures périodes pour irriguer demain</h2>
-          <p>Prévision de demain présentée par créneaux de 3 heures, de 00 h à 24 h.</p>
-        </div>
-      </div>
-      <article class="panel">
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Créneau</th><th>Qualité</th><th>DPV moyen</th><th>Vent moyen</th><th>Température moyenne</th><th>Pluie cumulée</th></tr></thead>
-            <tbody id="irrigationTable"></tbody>
-          </table>
-        </div>
-      </article>
-      <div class="warning-box"><strong>À interpréter :</strong> cette fenêtre concerne surtout les pertes atmosphériques et les conditions d’application. Elle ne détermine pas à elle seule la dose d’irrigation.</div>
-    </section>
-
     <section id="autres" class="page-section">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Indicateurs complémentaires</p>
-          <h2>Chaleur et conditions climatiques favorables</h2>
+          <h2>Chaleur, nuits chaudes, photosynthèse et humectation</h2>
         </div>
       </div>
 
       <div class="metric-grid">
         <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
         <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
-        <article class="metric-card"><p>Heures de conditions favorables</p><strong id="photoHours">—</strong><span>Température 18–30 °C, DPV 1–1,5 kPa et rayonnement > 100 W/m²</span></article>
+        <article class="metric-card"><p>Heures favorables</p><strong id="photoHours">—</strong><span>Température 18–30 °C, DPV 1–1,5 kPa, rayonnement > 100 W/m²</span></article>
         <article class="metric-card"><p>Heures humides estimées</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
       </div>
 
@@ -209,14 +184,14 @@
         <article class="panel"><h3>Heures humides estimées</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
       </div>
       <article class="panel">
-        <h3>Heures de conditions favorables par jour</h3>
+        <h3>Heures favorables par jour</h3>
         <div class="chart-wrap"><canvas id="photoChart"></canvas></div>
       </article>
     </section>
 
     <section id="deficit" class="page-section">
       <div class="section-heading">
-        <div><p class="eyebrow">Bilan climatique</p><h2>Déficit climatique cumulé</h2><p>ET₀ − la pluie.</p></div>
+        <div><p class="eyebrow">Bilan climatique</p><h2>Déficit climatique cumulé</h2><p>ET₀ − la pluie. Le cumul peut devenir négatif lorsque les pluies dépassent l’ET₀.</p></div>
       </div>
       <div class="controls">
         <label>Période
@@ -244,8 +219,7 @@
         <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
         <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
         <article class="method-card"><h3>Heures humides estimées</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
-        <article class="method-card"><h3>Heures de conditions favorables</h3><p>Température entre 18 et 30 °C, DPV entre 1 et 1,5 kPa et rayonnement supérieur à 100 W/m².</p></article>
-        <article class="method-card"><h3>Fenêtre d’irrigation</h3><p>Score horaire privilégiant un faible DPV, un vent faible, une température modérée et l’absence de pluie.</p></article>
+        <article class="method-card"><h3>Heures favorables</h3><p>Température entre 18 et 30 °C, DPV entre 1 et 1,5 kPa et rayonnement supérieur à 100 W/m².</p></article>
       </div>
       <div class="warning-box"><strong>Prototype :</strong> l’indice de contrainte et les règles associées doivent être validés agronomiquement avant diffusion opérationnelle.</div>
     </section>

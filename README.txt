@@ -13,10 +13,9 @@ FONCTIONNALITÉS
 - DPV horaire avec bandes colorées ;
 - heures cumulées > 1,5 / 2,5 / 3,5 / 4,5 kPa ;
 - indice de contrainte climatique journalier de 0 à 100 ;
-- fenêtre d’irrigation par créneaux de 3 h pour le lendemain ;
 - heures > 35 °C ;
 - nuits tropicales ;
-- heures de conditions climatiques favorables ;
+- heures potentiellement favorables à la photosynthèse ;
 - heures humides estimées ;
 - ET0 et déficit climatique historique.
 
@@ -51,7 +50,7 @@ Puis : Settings > Pages > Deploy from a branch > main > root.
 
 IMPORTANT
 ---------
-L’indice de contrainte, la fenêtre d’irrigation, l’humectation estimée et les heures
+L’indice de contrainte, les heures humides estimées et les heures
 favorables sont des règles de prototype. Elles doivent être validées par SudExpé
 avant utilisation opérationnelle ou diffusion comme conseil agronomique.
 
@@ -73,3 +72,10 @@ Tous les autres graphiques restent sur fond blanc gradué.
 MISE À JOUR V2.6
 ----------------
 La section « Lecture des bandes de DPV » est supprimée. Le graphique des heures cumulées occupe toute la largeur.
+
+MISE À JOUR — VERSION SANS IRRIGATION
+--------------------------------------
+- suppression de l’onglet Irrigation ;
+- suppression de la carte « Meilleure fenêtre d’irrigation » ;
+- précision de la définition des heures de conditions favorables ;
+- déficit climatique cumulé autorisé à passer sous zéro lorsque la pluie cumulée dépasse l’ET0.
