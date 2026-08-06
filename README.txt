@@ -80,3 +80,15 @@ NETTOYAGE FINAL
 - fonction computeDeficit conservée et sécurisée ;
 - bilan cumulé autorisé sous zéro ;
 - heures de conditions favorables explicitées.
+
+
+DERNIÈRES MODIFICATIONS
+-----------------------
+- logo SudExpé intégré dans l’en-tête ;
+- couleurs générales harmonisées avec le logo ;
+- suppression de la mention V2 et des mentions prototype visibles ;
+- affichage de la ville la plus proche via géocodage inverse ;
+- plage DPV favorable modifiée à 0,8–1,6 kPa ;
+- page Déficit climatique placée après DPV ;
+- intitulé « Indice de contrainte » harmonisé ;
+- encart Fenêtre d’irrigation absent.

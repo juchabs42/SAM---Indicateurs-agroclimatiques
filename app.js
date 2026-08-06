@@ -1,10 +1,10 @@
-const DEFAULT_LOCATION={latitude:43.6077,longitude:4.0122,label:"Bassin de Mauguio — démonstration"};
-const state={hourly:[],daily:[],charts:{},label:""};
+const DEFAULT_LOCATION={latitude:43.6077,longitude:4.0122,label:"Ma position"};
+const state={hourly:[],daily:[],charts:{},label:"",place:""};
 
 const chartBase={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,padding:18}},vpdBands:{enabled:false}},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{beginAtZero:true,grid:{color:"rgba(101,114,126,.13)"}}}};
 
 const vpdBandsPlugin={id:"vpdBands",beforeDraw(chart,args,options){if(!options||options.enabled!==true||!chart.chartArea)return;const{ctx,chartArea,scales}=chart;const y=scales.y;if(!y)return;const bands=[
-{min:0,max:1,color:"rgba(72,149,239,.28)"},{min:1,max:1.5,color:"rgba(82,183,136,.28)"},{min:1.5,max:2.5,color:"rgba(248,196,62,.32)"},{min:2.5,max:3.5,color:"rgba(244,140,54,.32)"},{min:3.5,max:4.5,color:"rgba(214,69,65,.30)"},{min:4.5,max:Math.max(6,y.max),color:"rgba(83,52,131,.30)"}];ctx.save();bands.forEach(b=>{const top=y.getPixelForValue(Math.min(b.max,y.max));const bottom=y.getPixelForValue(Math.max(b.min,y.min));ctx.fillStyle=b.color;ctx.fillRect(chartArea.left,top,chartArea.right-chartArea.left,bottom-top)});ctx.restore()}};
+{min:0,max:0.8,color:"rgba(72,149,239,.28)"},{min:0.8,max:1.6,color:"rgba(82,183,136,.28)"},{min:1.6,max:2.5,color:"rgba(248,196,62,.32)"},{min:2.5,max:3.5,color:"rgba(244,140,54,.32)"},{min:3.5,max:4.5,color:"rgba(214,69,65,.30)"},{min:4.5,max:Math.max(6,y.max),color:"rgba(83,52,131,.30)"}];ctx.save();bands.forEach(b=>{const top=y.getPixelForValue(Math.min(b.max,y.max));const bottom=y.getPixelForValue(Math.max(b.min,y.min));ctx.fillStyle=b.color;ctx.fillRect(chartArea.left,top,chartArea.right-chartArea.left,bottom-top)});ctx.restore()}};
 Chart.register(vpdBandsPlugin);
 
 
@@ -12,7 +12,7 @@ function fmt(v,d=1){return Number.isFinite(v)?v.toLocaleString("fr-FR",{minimumF
 function dateLabel(iso){return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(iso))}
 function dayLabel(iso){return new Intl.DateTimeFormat("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"}).format(new Date(`${iso}T12:00:00`))}
 function calcVpd(t,rh){const es=.6108*Math.exp((17.27*t)/(t+237.3));return Math.max(0,es*(1-rh/100))}
-function vpdLabel(v){if(v<1)return"Faible demande atmosphérique";if(v<1.5)return"Conditions favorables";if(v<2.5)return"Début de régulation stomatique";if(v<3.5)return"Contrainte atmosphérique élevée";if(v<4.5)return"Stress sévère";return"Stress extrême"}
+function vpdLabel(v){if(v<0.8)return"Faible demande atmosphérique";if(v<1.6)return"Conditions favorables";if(v<2.5)return"Début de régulation stomatique";if(v<3.5)return"Contrainte atmosphérique élevée";if(v<4.5)return"Stress sévère";return"Stress extrême"}
 function destroy(name){if(state.charts[name])state.charts[name].destroy()}
 
 async function fetchJson(url){const r=await fetch(url);if(!r.ok){let detail="";try{const e=await r.json();detail=e.reason?`: ${e.reason}`:""}catch{}throw new Error(`Erreur Open-Meteo (${r.status})${detail}`)}return r.json()}
@@ -22,6 +22,16 @@ async function fetchWeather(lat,lon){
  const hourly=d.hourly.time.map((time,i)=>{const temperature=Number(d.hourly.temperature_2m[i]);const humidity=Number(d.hourly.relative_humidity_2m[i]);return{time,temperature,humidity,vpd:calcVpd(temperature,humidity),rain:Number(d.hourly.precipitation[i]||0),wind:Number(d.hourly.wind_speed_10m[i]||0),radiation:Number(d.hourly.shortwave_radiation[i]||0)}});
  const daily=d.daily.time.map((date,i)=>({date,rain:Number(d.daily.precipitation_sum[i]||0),et0:Number(d.daily.et0_fao_evapotranspiration[i]||0),tmax:Number(d.daily.temperature_2m_max[i]),tmin:Number(d.daily.temperature_2m_min[i])}));
  return{hourly,daily,timezone:d.timezone,elevation:d.elevation}
+}
+
+async function fetchNearestCity(lat,lon){
+ try{
+   const data=await fetchJson(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`);
+   const a=data.address||{};
+   return a.city||a.town||a.village||a.municipality||a.county||data.name||"";
+ }catch(e){
+   return "";
+ }
 }
 
 function currentIndex(){const now=Date.now();let best=0,gap=Infinity;state.hourly.forEach((x,i)=>{const g=Math.abs(new Date(x.time)-now);if(g<gap){gap=g;best=i}});return best}
@@ -57,7 +67,15 @@ function initLocation(){
 }
 async function loadLocation(lat,lon,label){
  loadingPanel.classList.remove("hidden");locationMessage.textContent="";
- try{const r=await fetchWeather(lat,lon);state.hourly=r.hourly;state.daily=r.daily;state.label=label;locationTitle.textContent=label;locationDetails.textContent=`Latitude ${fmt(lat,4)} · longitude ${fmt(lon,4)} · altitude ${fmt(r.elevation,0)} m`;locationMessage.textContent="Données actualisées.";renderAll()}
+ try{
+  const r=await fetchWeather(lat,lon);
+  const place=await fetchNearestCity(lat,lon);
+  state.hourly=r.hourly;state.daily=r.daily;state.label=label;state.place=place;
+  locationTitle.textContent="Ma position";
+  locationDetails.textContent=`${place?`Ville la plus proche : ${place} · `:""}Latitude ${fmt(lat,4)} · longitude ${fmt(lon,4)} · altitude ${fmt(r.elevation,0)} m`;
+  locationMessage.textContent="Données actualisées.";
+  renderAll();
+ }
  catch(e){locationMessage.textContent=`Impossible de charger les données : ${e.message}`}
  finally{loadingPanel.classList.add("hidden")}
 }
@@ -101,7 +119,7 @@ function renderScore(){
  scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
 }
 
-function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=1&&x.vpd<=1.5&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures de conditions favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
+function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=0.8&&x.vpd<=1.6&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=0.8&&x.vpd<=1.6&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures de conditions favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
 
 function computeDeficit(days){
  let cumulative=0;

@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Prototype Sud Agro Météo : indicateurs agroclimatiques prévisionnels.">
+  <meta name="description" content="Sud Agro Météo : indicateurs agroclimatiques.">
   <meta name="theme-color" content="#7f1d2d">
-  <title>Indicateurs agroclimatiques V2 — Sud Agro Météo</title>
+  <title>Indicateurs agroclimatiques — Sud Agro Météo</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark">S</div>
+      <div class="brand-mark"><img src="logo-sudexpe.jpg" alt="Logo SudExpé"></div>
       <div>
         <p class="brand-kicker">Sud Agro Météo</p>
-        <h1>Indicateurs agroclimatiques V2</h1>
+        <h1>Indicateurs agroclimatiques</h1>
       </div>
     </div>
 
@@ -24,7 +24,7 @@
     <nav id="mainNav" class="main-nav">
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
       <button class="nav-link" data-section="vpd">DPV</button>
-      <button class="nav-link" data-section="contrainte">Indice climatique</button>
+      <button class="nav-link" data-section="contrainte">Indice de contrainte</button>
       <button class="nav-link" data-section="autres">Autres indicateurs</button>
       <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
@@ -35,7 +35,7 @@
     <section class="location-panel">
       <div>
         <p class="eyebrow">Localisation</p>
-        <h2 id="locationTitle">Position de démonstration</h2>
+        <h2 id="locationTitle">Ma position</h2>
         <p id="locationDetails">Les données sont récupérées automatiquement depuis Open-Meteo.</p>
       </div>
       <div class="location-actions">
@@ -61,8 +61,7 @@
           <h2>Suivi des indicateurs agroclimatiques prévisionnels</h2>
           <p>Consultez en un coup d’œil les conditions prévues pour les 7 prochains jours afin d’anticiper les périodes de contrainte et organiser les interventions.</p>
         </div>
-        <div class="hero-badge"><span class="status-dot"></span>Prototype V2</div>
-      </div>
+</div>
 
       <div class="summary-grid">
         <article class="summary-card score-card">
@@ -84,7 +83,7 @@
 
       <div class="dashboard-grid">
         <article class="panel">
-          <div class="panel-header"><div><p class="panel-kicker">7 prochains jours</p><h3>Indice de contrainte climatique</h3></div></div>
+          <div class="panel-header"><div><p class="panel-kicker">7 prochains jours</p><h3>Indice de contrainte</h3></div></div>
           <div class="chart-wrap"><canvas id="dashboardScoreChart"></canvas></div>
         </article>
         <article class="panel">
@@ -92,8 +91,8 @@
           <div class="chart-wrap"><canvas id="dashboardVpdChart"></canvas></div>
           <div class="vpd-legend-inline" aria-label="Légende des bandes de DPV">
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-blue"></span>0–1,0 kPa · Faible demande</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>1,0–1,5 kPa · Conditions favorables</span>
-            <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,5–2,5 kPa · Régulation stomatique</span>
+            <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>0,8–1,6 kPa · Conditions favorables</span>
+            <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,6–2,5 kPa · Régulation stomatique</span>
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-orange"></span>2,5–3,5 kPa · Contrainte élevée</span>
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-red"></span>3,5–4,5 kPa · Stress sévère</span>
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-purple"></span>&gt; 4,5 kPa · Stress extrême</span>
@@ -106,8 +105,8 @@
       <div class="section-heading">
         <div>
           <p class="eyebrow">Demande atmosphérique</p>
-          <h2>DPV horaire et charge cumulée</h2>
-          <p>Les bandes suivent les seuils définis pour le prototype SudExpé.</p>
+          <h2>DPV horaire</h2>
+          
         </div>
       </div>
 
@@ -126,8 +125,8 @@
         <div class="chart-wrap large"><canvas id="vpdChart"></canvas></div>
         <div class="vpd-legend-inline" aria-label="Légende des bandes de DPV">
           <span class="vpd-legend-item"><span class="vpd-swatch swatch-blue"></span>0–1,0 kPa · Faible demande</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>1,0–1,5 kPa · Conditions favorables</span>
-          <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,5–2,5 kPa · Régulation stomatique</span>
+          <span class="vpd-legend-item"><span class="vpd-swatch swatch-green"></span>0,8–1,6 kPa · Conditions favorables</span>
+          <span class="vpd-legend-item"><span class="vpd-swatch swatch-yellow"></span>1,6–2,5 kPa · Régulation stomatique</span>
           <span class="vpd-legend-item"><span class="vpd-swatch swatch-orange"></span>2,5–3,5 kPa · Contrainte élevée</span>
           <span class="vpd-legend-item"><span class="vpd-swatch swatch-red"></span>3,5–4,5 kPa · Stress sévère</span>
           <span class="vpd-legend-item"><span class="vpd-swatch swatch-purple"></span>&gt; 4,5 kPa · Stress extrême</span>
@@ -140,54 +139,7 @@
       </article>
     </section>
 
-    <section id="contrainte" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Indice synthétique</p>
-          <h2>Indice de contrainte climatique journalier</h2>
-          <p>Score de 0 à 100 combinant DPV, durée de contrainte, température maximale et ET₀.</p>
-        </div>
-      </div>
 
-      <div class="score-legend">
-        <span class="score-low">0–24 Faible</span>
-        <span class="score-moderate">25–49 Modérée</span>
-        <span class="score-high">50–74 Élevée</span>
-        <span class="score-severe">75–89 Sévère</span>
-        <span class="score-extreme">90–100 Extrême</span>
-      </div>
-
-      <article class="panel">
-        <div class="chart-wrap large"><canvas id="scoreChart"></canvas></div>
-      </article>
-
-      <div id="scoreCards" class="forecast-grid"></div>
-    </section>
-
-    <section id="autres" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Indicateurs complémentaires</p>
-          <h2>Chaleur et conditions climatiques</h2>
-        </div>
-      </div>
-
-      <div class="metric-grid">
-        <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
-        <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
-        <article class="metric-card"><p>Heures de conditions favorables</p><strong id="photoHours">—</strong><span>Heures réunissant simultanément 18–30 °C, un DPV de 1 à 1,5 kPa et un rayonnement supérieur à 100 W/m²</span></article>
-        <article class="metric-card"><p>Heures humides estimées</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
-      </div>
-
-      <div class="dashboard-grid">
-        <article class="panel"><h3>Heures chaudes par jour</h3><div class="chart-wrap"><canvas id="heatChart"></canvas></div></article>
-        <article class="panel"><h3>Heures humides estimées</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
-      </div>
-      <article class="panel">
-        <h3>Heures de conditions favorables par jour</h3>
-        <div class="chart-wrap"><canvas id="photoChart"></canvas></div>
-      </article>
-    </section>
 
     <section id="deficit" class="page-section">
       <div class="section-heading">
@@ -211,22 +163,75 @@
       <article class="panel"><div class="chart-wrap large"><canvas id="deficitChart"></canvas></div></article>
     </section>
 
+
+
+    <section id="contrainte" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Synthèse prévisionnelle</p>
+          <h2>Indice de contrainte journalier</h2>
+          <p>Score de 0 à 100 combinant le DPV, la durée de contrainte, la température maximale et l’ET₀.</p>
+        </div>
+      </div>
+
+      <div class="score-legend">
+        <span class="score-low">0–24 Faible</span>
+        <span class="score-moderate">25–49 Modérée</span>
+        <span class="score-high">50–74 Élevée</span>
+        <span class="score-severe">75–89 Sévère</span>
+        <span class="score-extreme">90–100 Extrême</span>
+      </div>
+
+      <article class="panel">
+        <div class="chart-wrap large"><canvas id="scoreChart"></canvas></div>
+      </article>
+
+      <div id="scoreCards" class="forecast-grid"></div>
+    </section>
+
+
+
+    <section id="autres" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Indicateurs complémentaires</p>
+          <h2>Chaleur et conditions climatiques</h2>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
+        <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
+        <article class="metric-card"><p>Heures de conditions favorables</p><strong id="photoHours">—</strong><span>Heures réunissant simultanément 18–30 °C, un DPV de 0,8 à 1,6 kPa et un rayonnement supérieur à 100 W/m²</span></article>
+        <article class="metric-card"><p>Heures humides estimées</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="panel"><h3>Heures chaudes par jour</h3><div class="chart-wrap"><canvas id="heatChart"></canvas></div></article>
+        <article class="panel"><h3>Heures humides estimées</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
+      </div>
+      <article class="panel">
+        <h3>Heures de conditions favorables par jour</h3>
+        <div class="chart-wrap"><canvas id="photoChart"></canvas></div>
+      </article>
+    </section>
+
     <section id="methodes" class="page-section">
       <div class="section-heading">
-        <div><p class="eyebrow">Méthodes</p><h2>Définitions du prototype</h2></div>
+        <div><p class="eyebrow">Méthodes</p><h2>Méthodes</h2></div>
       </div>
       <div class="method-grid">
         <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
         <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
         <article class="method-card"><h3>Heures humides estimées</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
-        <article class="method-card"><h3>Heures de conditions favorables</h3><p>Une heure est comptée lorsque les trois conditions sont réunies simultanément : température entre 18 et 30 °C, DPV entre 1 et 1,5 kPa et rayonnement supérieur à 100 W/m². Cet indicateur décrit une fenêtre climatique potentiellement favorable ; il ne mesure pas directement le fonctionnement de l’arbre.</p></article>
+        <article class="method-card"><h3>Heures de conditions favorables</h3><p>Une heure est comptée lorsque les trois conditions sont réunies simultanément : température entre 18 et 30 °C, DPV entre 0,8 et 1,6 kPa et rayonnement supérieur à 100 W/m². Cet indicateur décrit une fenêtre climatique potentiellement favorable ; il ne mesure pas directement le fonctionnement de l’arbre.</p></article>
         <article class="method-card"><h3>Fenêtre d’irrigation</h3><p>Score horaire privilégiant un faible DPV, un vent faible, une température modérée et l’absence de pluie.</p></article>
       </div>
       <div class="warning-box"><strong>Prototype :</strong> l’indice de contrainte et les règles associées doivent être validés agronomiquement avant diffusion opérationnelle.</div>
     </section>
   </main>
 
-  <footer><p>Prototype Sud Agro Météo — Indicateurs agroclimatiques V2.</p><p>Données Open-Meteo.</p></footer>
+  <footer><p>Sud Agro Météo — Indicateurs agroclimatiques</p><p>Données Open-Meteo.</p></footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
