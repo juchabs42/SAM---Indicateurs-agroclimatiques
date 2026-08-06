@@ -92,3 +92,10 @@ DERNIÈRES MODIFICATIONS
 - page Déficit climatique placée après DPV ;
 - intitulé « Indice de contrainte » harmonisé ;
 - encart Fenêtre d’irrigation absent.
+
+
+CORRECTION NAVIGATION ET MÉTHODES
+---------------------------------
+- ordre des onglets : Vue d’ensemble, Déficit climatique, DPV, Indice de contrainte, Autres indicateurs, Méthodes ;
+- suppression de l’encart Fenêtre d’irrigation dans Méthodes ;
+- suppression du libellé gris Méthodes, conservation du titre noir.

@@ -23,10 +23,10 @@
 
     <nav id="mainNav" class="main-nav">
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
+      <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="vpd">DPV</button>
       <button class="nav-link" data-section="contrainte">Indice de contrainte</button>
       <button class="nav-link" data-section="autres">Autres indicateurs</button>
-      <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
     </nav>
   </header>
@@ -218,14 +218,13 @@
 
     <section id="methodes" class="page-section">
       <div class="section-heading">
-        <div><p class="eyebrow">Méthodes</p><h2>Méthodes</h2></div>
+        <div><h2>Méthodes</h2></div>
       </div>
       <div class="method-grid">
         <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
         <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
         <article class="method-card"><h3>Heures humides estimées</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
         <article class="method-card"><h3>Heures de conditions favorables</h3><p>Une heure est comptée lorsque les trois conditions sont réunies simultanément : température entre 18 et 30 °C, DPV entre 0,8 et 1,6 kPa et rayonnement supérieur à 100 W/m². Cet indicateur décrit une fenêtre climatique potentiellement favorable ; il ne mesure pas directement le fonctionnement de l’arbre.</p></article>
-        <article class="method-card"><h3>Fenêtre d’irrigation</h3><p>Score horaire privilégiant un faible DPV, un vent faible, une température modérée et l’absence de pluie.</p></article>
       </div>
       <div class="warning-box"><strong>Prototype :</strong> l’indice de contrainte et les règles associées doivent être validés agronomiquement avant diffusion opérationnelle.</div>
     </section>
