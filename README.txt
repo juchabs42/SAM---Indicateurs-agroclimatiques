@@ -1,101 +1,48 @@
-INDICATEURS AGROCLIMATIQUES V2
-==============================
+SUD AGRO MÉTÉO — INDICATEURS AGROCLIMATIQUES
+================================================
 
 FICHIERS
 --------
 - index.html
 - style.css
 - app.js
+- logo-sudexpe.jpg
 
-FONCTIONNALITÉS
----------------
-- géolocalisation automatique ou coordonnées manuelles ;
-- DPV horaire avec bandes colorées ;
-- heures cumulées > 1,5 / 2,5 / 3,5 / 4,5 kPa ;
-- indice de contrainte climatique journalier de 0 à 100 ;
-- heures > 35 °C ;
-- nuits tropicales ;
-- heures de conditions climatiques favorables ;
-- heures humides estimées ;
-- ET0 et déficit climatique historique.
+ONGLETS
+-------
+1. Vue d’ensemble
+2. Prévisions météo
+3. Déficit climatique
+4. DPV
+5. Indice de contrainte
+6. Méthodes
 
-INDICE DE CONTRAINTE JOURNALIER
-------------------------------
-Score prototype :
-- 40 % : DPV maximal journalier ;
-- 25 % : durée avec DPV > 2,5 kPa ;
-- 20 % : température maximale ;
-- 15 % : ET0 journalière.
+PRÉVISIONS MÉTÉO
+----------------
+Prévisions sur 7 jours pour la position sélectionnée :
+- températures minimales et maximales ;
+- pluie ;
+- humidité relative moyenne ;
+- vent moyen et maximal.
 
-Classes :
-- 0 à 24 : faible ;
-- 25 à 49 : modérée ;
-- 50 à 74 : élevée ;
-- 75 à 89 : sévère ;
-- 90 à 100 : extrême.
-
-SEUILS DPV
-----------
-- 0 à 1,0 kPa : faible demande atmosphérique ;
-- 1,0 à 1,5 kPa : conditions favorables ;
-- 1,5 à 2,5 kPa : début de régulation stomatique ;
+DPV
+---
+- 0 à 0,8 kPa : faible demande atmosphérique ;
+- 0,8 à 1,6 kPa : conditions favorables ;
+- 1,6 à 2,5 kPa : début de régulation stomatique ;
 - 2,5 à 3,5 kPa : contrainte atmosphérique élevée ;
 - 3,5 à 4,5 kPa : stress sévère ;
 - > 4,5 kPa : stress extrême.
 
+DÉFICIT CLIMATIQUE
+------------------
+Calcul : ET0 - pluie, cumulé sur la période sélectionnée. Le bilan peut être négatif.
+
 GITHUB PAGES
 ------------
-Déposer index.html, style.css et app.js à la racine du dépôt.
-Puis : Settings > Pages > Deploy from a branch > main > root.
+Déposer les quatre fichiers web et le logo à la racine du dépôt, puis activer :
+Settings > Pages > Deploy from a branch > main > root.
 
-IMPORTANT
----------
-L’indice de contrainte, les heures humides estimées et les heures de conditions
-favorables sont des règles de prototype. Elles doivent être validées par SudExpé
-avant utilisation opérationnelle ou diffusion comme conseil agronomique.
-
-MISE À JOUR V2.2
-----------------
-- Les deux graphiques DPV conservent les bandes colorées.
-- La légende des bandes est affichée sous les graphiques, hors de la zone de tracé.
-- Tous les autres graphiques utilisent un fond blanc gradué, sans bandes DPV.
-- Les graphiques de l’indice climatique utilisent à nouveau une couleur selon le niveau de l’indice.
-
-CORRECTION V2.3
----------------
-Le plugin de légende DPV interne a été supprimé.
-Les bandes DPV sont désactivées par défaut et activées uniquement sur :
-- le graphique DPV de la vue d’ensemble ;
-- le graphique DPV détaillé.
-Tous les autres graphiques restent sur fond blanc gradué.
-
-MISE À JOUR V2.6
-----------------
-La section « Lecture des bandes de DPV » est supprimée. Le graphique des heures cumulées occupe toute la largeur.
-
-NETTOYAGE FINAL
----------------
-- module Irrigation supprimé ;
-- encart Meilleure fenêtre d’irrigation supprimé ;
-- fonction computeDeficit conservée et sécurisée ;
-- bilan cumulé autorisé sous zéro ;
-- heures de conditions favorables explicitées.
-
-
-DERNIÈRES MODIFICATIONS
------------------------
-- logo SudExpé intégré dans l’en-tête ;
-- couleurs générales harmonisées avec le logo ;
-- suppression de la mention V2 et des mentions prototype visibles ;
-- affichage de la ville la plus proche via géocodage inverse ;
-- plage DPV favorable modifiée à 0,8–1,6 kPa ;
-- page Déficit climatique placée après DPV ;
-- intitulé « Indice de contrainte » harmonisé ;
-- encart Fenêtre d’irrigation absent.
-
-
-CORRECTION NAVIGATION ET MÉTHODES
----------------------------------
-- ordre des onglets : Vue d’ensemble, Déficit climatique, DPV, Indice de contrainte, Autres indicateurs, Méthodes ;
-- suppression de l’encart Fenêtre d’irrigation dans Méthodes ;
-- suppression du libellé gris Méthodes, conservation du titre noir.
+NOTE
+----
+L’indice de contrainte et les heures de conditions favorables sont des indicateurs d’aide à l’interprétation. Ils ne constituent pas des modèles scientifiques validés.

@@ -40,6 +40,22 @@ function forecastDays(){const now=new Date();now.setHours(0,0,0,0);return state.
 function hourlyForDay(date){return state.hourly.filter(x=>x.time.startsWith(date))}
 function pastDays(n){const end=new Date();end.setHours(23,59,59,999);const start=new Date(end);start.setDate(start.getDate()-n+1);return state.daily.filter(d=>{const x=new Date(`${d.date}T12:00:00`);return x>=start&&x<=end})}
 
+function average(values){
+ const valid=values.filter(Number.isFinite);
+ return valid.length?valid.reduce((a,b)=>a+b,0)/valid.length:0;
+}
+function weatherForecastDays(){
+ return forecastDays().map(day=>{
+   const h=hourlyForDay(day.date);
+   return{
+     ...day,
+     humidityMean:average(h.map(x=>x.humidity)),
+     windMean:average(h.map(x=>x.wind)),
+     windMax:h.length?Math.max(...h.map(x=>x.wind)):0
+   };
+ });
+}
+
 function scoreDay(day){
  const h=hourlyForDay(day.date);
  const maxVpd=Math.max(...h.map(x=>x.vpd),0);
@@ -84,6 +100,14 @@ function renderDashboard(){
  const fd=forecastDays().map(scoreDay),today=fd[0],next48=futureHours(48);
  if(!today)return;
  todayScore.textContent=`${today.score}/100`;todayScoreLabel.textContent=scoreLabel(today.score);todayMaxVpd.textContent=`${fmt(today.maxVpd)} kPa`;todayVpdLabel.textContent=vpdLabel(today.maxVpd);
+ const weatherDays=weatherForecastDays();
+ const tomorrow=weatherDays[1]||weatherDays[0];
+ if(tomorrow){
+   tomorrowTemperature.textContent=`${fmt(tomorrow.tmin)}–${fmt(tomorrow.tmax)} °C`;
+   tomorrowWeatherDetails.textContent=`Pluie ${fmt(tomorrow.rain)} mm · humidité ${fmt(tomorrow.humidityMean,0)} % · vent max ${fmt(tomorrow.windMax)} km/h`;
+ }
+ const favorable=futureHours(168).filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=0.8&&x.vpd<=1.6&&x.radiation>100).length;
+ dashboardFavorableHours.textContent=`${favorable} h`;
  const deficit=computeDeficit(pastDays(30));dashboardDeficit.textContent=`${fmt(deficit.at(-1)?.cumulative||0)} mm`;
 
  destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
@@ -96,6 +120,53 @@ function renderDashboard(){
 ?"rgba(244,140,54,.82)"
 :"rgba(83,52,131,.82)"),borderRadius:6}]},options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100}}}});
  destroy("dashVpd");state.charts.dashVpd=new Chart(dashboardVpdChart,{type:"line",data:{labels:next48.map(x=>dateLabel(x.time)),datasets:[{label:"DPV",data:next48.map(x=>x.vpd),borderColor:"#7f1d2d",pointRadius:1.5,tension:.2}]},options:{...chartBase,plugins:{...chartBase.plugins,vpdBands:{enabled:true}},scales:{...chartBase.scales,y:{beginAtZero:true,suggestedMax:5.5,title:{display:true,text:"DPV (kPa)"}}}}})
+}
+
+function renderWeather(){
+ const days=weatherForecastDays();
+ if(!days.length)return;
+ weatherCards.innerHTML=days.map(d=>`<article class="weather-card">
+   <span class="weather-day">${dayLabel(d.date)}</span>
+   <strong>${fmt(d.tmin)}–${fmt(d.tmax)} °C</strong>
+   <span class="weather-detail">Pluie : ${fmt(d.rain)} mm</span>
+   <span class="weather-detail">Humidité moy. : ${fmt(d.humidityMean,0)} %</span>
+   <span class="weather-detail">Vent moy. : ${fmt(d.windMean)} km/h</span>
+   <span class="weather-detail">Vent max : ${fmt(d.windMax)} km/h</span>
+ </article>`).join("");
+
+ destroy("temperature");
+ state.charts.temperature=new Chart(temperatureChart,{
+   type:"line",
+   data:{labels:days.map(d=>dayLabel(d.date)),datasets:[
+     {label:"Tmin",data:days.map(d=>d.tmin),borderColor:"#4895ef",backgroundColor:"#4895ef",tension:.2,pointRadius:3},
+     {label:"Tmax",data:days.map(d=>d.tmax),borderColor:"#e1064b",backgroundColor:"#e1064b",tension:.2,pointRadius:3}
+   ]},
+   options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:false,title:{display:true,text:"Température (°C)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+ });
+
+ destroy("rainForecast");
+ state.charts.rainForecast=new Chart(rainForecastChart,{
+   type:"bar",
+   data:{labels:days.map(d=>dayLabel(d.date)),datasets:[{label:"Pluie prévue",data:days.map(d=>d.rain),backgroundColor:"rgba(72,149,239,.75)",borderRadius:5}]},
+   options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,title:{display:true,text:"Pluie (mm)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+ });
+
+ destroy("humidity");
+ state.charts.humidity=new Chart(humidityChart,{
+   type:"line",
+   data:{labels:days.map(d=>dayLabel(d.date)),datasets:[{label:"Humidité moyenne",data:days.map(d=>d.humidityMean),borderColor:"#52b788",backgroundColor:"#52b788",tension:.2,pointRadius:3}]},
+   options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,max:100,title:{display:true,text:"Humidité relative (%)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+ });
+
+ destroy("wind");
+ state.charts.wind=new Chart(windChart,{
+   type:"line",
+   data:{labels:days.map(d=>dayLabel(d.date)),datasets:[
+     {label:"Vent moyen",data:days.map(d=>d.windMean),borderColor:"#65727e",backgroundColor:"#65727e",tension:.2,pointRadius:3},
+     {label:"Vent maximal",data:days.map(d=>d.windMax),borderColor:"#e1064b",backgroundColor:"#e1064b",tension:.2,pointRadius:3}
+   ]},
+   options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,title:{display:true,text:"Vent (km/h)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+ });
 }
 
 function renderVpd(){
@@ -119,8 +190,6 @@ function renderScore(){
  scoreCards.innerHTML=fd.map(d=>`<article class="forecast-card"><span>${dayLabel(d.date)}</span><strong>${d.score}/100</strong><span class="forecast-level">${scoreLabel(d.score)}</span><div class="forecast-metrics"><span>DPV max : ${fmt(d.maxVpd)} kPa</span><span>Durée > 2,5 kPa : ${d.hours25} h</span><span>Tmax : ${fmt(d.tmax)} °C</span><span>ET₀ : ${fmt(d.et0)} mm</span></div></article>`).join("")
 }
 
-function renderOthers(){const fd=forecastDays(),future=futureHours(168);hours35.textContent=`${future.filter(x=>x.temperature>35).length} h`;tropicalNights.textContent=`${fd.filter(d=>d.tmin>=20).length} nuit(s)`;photoHours.textContent=`${future.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=0.8&&x.vpd<=1.6&&x.radiation>100).length} h`;wetHours.textContent=`${future.filter(x=>x.rain>0||x.humidity>=90).length} h`;const byDay=fd.map(d=>{const h=hourlyForDay(d.date);return{date:d.date,heat:h.filter(x=>x.temperature>35).length,wet:h.filter(x=>x.rain>0||x.humidity>=90).length,photo:h.filter(x=>x.temperature>=18&&x.temperature<=30&&x.vpd>=0.8&&x.vpd<=1.6&&x.radiation>100).length}});destroy("heat");state.charts.heat=new Chart(heatChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures > 35 °C",data:byDay.map(d=>d.heat),backgroundColor:"rgba(214,69,65,.78)",borderRadius:5}]},options:chartBase});destroy("wet");state.charts.wet=new Chart(wetnessChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures humides estimées",data:byDay.map(d=>d.wet),backgroundColor:"rgba(72,149,239,.78)",borderRadius:5}]},options:chartBase});destroy("photo");state.charts.photo=new Chart(photoChart,{type:"bar",data:{labels:byDay.map(d=>dayLabel(d.date)),datasets:[{label:"Heures de conditions favorables",data:byDay.map(d=>d.photo),backgroundColor:"rgba(82,183,136,.78)",borderRadius:5}]},options:chartBase})}
-
 function computeDeficit(days){
  let cumulative=0;
  return days.map(day=>{
@@ -135,5 +204,5 @@ function renderDeficit(){
  et0Total.textContent=`${fmt(et0)} mm`;rainTotal.textContent=`${fmt(rain)} mm`;deficitTotal.textContent=`${fmt(last)} mm`;deficitWeekChange.textContent=`${week>=0?"+":""}${fmt(week)} mm`;
  destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>dayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",beginAtZero:false,grid:{drawOnChartArea:false}}}}})
 }
-function renderAll(){renderDashboard();renderVpd();renderScore();renderOthers();renderDeficit()}
+function renderAll(){renderDashboard();renderWeather();renderDeficit();renderVpd();renderScore()}
 document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})

@@ -23,10 +23,10 @@
 
     <nav id="mainNav" class="main-nav">
       <button class="nav-link active" data-section="dashboard">Vue d’ensemble</button>
+      <button class="nav-link" data-section="meteo">Prévisions météo</button>
       <button class="nav-link" data-section="deficit">Déficit climatique</button>
       <button class="nav-link" data-section="vpd">DPV</button>
       <button class="nav-link" data-section="contrainte">Indice de contrainte</button>
-      <button class="nav-link" data-section="autres">Autres indicateurs</button>
       <button class="nav-link" data-section="methodes">Méthodes</button>
     </nav>
   </header>
@@ -63,7 +63,12 @@
         </div>
 </div>
 
-      <div class="summary-grid">
+      <div class="summary-grid dashboard-summary-grid">
+        <article class="summary-card">
+          <p>Prévision demain</p>
+          <strong id="tomorrowTemperature">—</strong>
+          <span id="tomorrowWeatherDetails">—</span>
+        </article>
         <article class="summary-card score-card">
           <p>Indice de contrainte aujourd’hui</p>
           <strong id="todayScore">—</strong>
@@ -78,6 +83,11 @@
           <p>Déficit climatique sur 30 jours</p>
           <strong id="dashboardDeficit">—</strong>
           <span>ET₀ − pluie</span>
+        </article>
+        <article class="summary-card">
+          <p>Conditions favorables sur 7 jours</p>
+          <strong id="dashboardFavorableHours">—</strong>
+          <span>18–30 °C · DPV 0,8–1,6 kPa · rayonnement &gt; 100 W/m²</span>
         </article>
       </div>
 
@@ -97,6 +107,38 @@
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-red"></span>3,5–4,5 kPa · Stress sévère</span>
             <span class="vpd-legend-item"><span class="vpd-swatch swatch-purple"></span>&gt; 4,5 kPa · Stress extrême</span>
           </div>
+        </article>
+      </div>
+    </section>
+
+
+    <section id="meteo" class="page-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">7 prochains jours</p>
+          <h2>Prévisions météo</h2>
+          <p>Températures, pluie, humidité et vent prévus à la position sélectionnée.</p>
+        </div>
+      </div>
+
+      <div id="weatherCards" class="weather-forecast-grid"></div>
+
+      <div class="weather-chart-grid">
+        <article class="panel">
+          <div class="panel-header"><div><h3>Températures minimales et maximales</h3></div></div>
+          <div class="chart-wrap"><canvas id="temperatureChart"></canvas></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Pluie prévue</h3></div></div>
+          <div class="chart-wrap"><canvas id="rainForecastChart"></canvas></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Humidité relative moyenne</h3></div></div>
+          <div class="chart-wrap"><canvas id="humidityChart"></canvas></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3>Vent moyen et maximal</h3></div></div>
+          <div class="chart-wrap"><canvas id="windChart"></canvas></div>
         </article>
       </div>
     </section>
@@ -189,54 +231,37 @@
       <div id="scoreCards" class="forecast-grid"></div>
     </section>
 
-
-
-    <section id="autres" class="page-section">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Indicateurs complémentaires</p>
-          <h2>Chaleur et conditions climatiques</h2>
-        </div>
-      </div>
-
-      <div class="metric-grid">
-        <article class="metric-card"><p>Heures > 35 °C sur 7 jours</p><strong id="hours35">—</strong><span>Prévision</span></article>
-        <article class="metric-card"><p>Nuits tropicales</p><strong id="tropicalNights">—</strong><span>Tmin ≥ 20 °C sur 7 jours</span></article>
-        <article class="metric-card"><p>Heures de conditions favorables</p><strong id="photoHours">—</strong><span>Heures réunissant simultanément 18–30 °C, un DPV de 0,8 à 1,6 kPa et un rayonnement supérieur à 100 W/m²</span></article>
-        <article class="metric-card"><p>Heures humides estimées</p><strong id="wetHours">—</strong><span>Pluie ou HR ≥ 90 % sur 7 jours</span></article>
-      </div>
-
-      <div class="dashboard-grid">
-        <article class="panel"><h3>Heures chaudes par jour</h3><div class="chart-wrap"><canvas id="heatChart"></canvas></div></article>
-        <article class="panel"><h3>Heures humides estimées</h3><div class="chart-wrap"><canvas id="wetnessChart"></canvas></div></article>
-      </div>
-      <article class="panel">
-        <h3>Heures de conditions favorables par jour</h3>
-        <div class="chart-wrap"><canvas id="photoChart"></canvas></div>
-      </article>
-    </section>
-
     <section id="methodes" class="page-section">
       <div class="section-heading">
         <div><h2>Méthodes</h2></div>
       </div>
+
       <div class="method-grid">
-        <article class="method-card"><h3>DPV</h3><p>Calculé à partir de la température et de l’humidité relative horaires.</p></article>
-        <article class="method-card"><h3>Indice climatique</h3><p>40 % DPV maximal, 25 % durée avec DPV > 2,5 kPa, 20 % température maximale et 15 % ET₀.</p></article>
-        <article class="method-card"><h3>Heures humides estimées</h3><p>Heure considérée humide si pluie > 0 mm ou humidité relative ≥ 90 %.</p></article>
-        <article class="method-card"><h3>Heures de conditions favorables</h3><p>Une heure est comptée lorsque les trois conditions sont réunies simultanément : température entre 18 et 30 °C, DPV entre 0,8 et 1,6 kPa et rayonnement supérieur à 100 W/m². Cet indicateur décrit une fenêtre climatique potentiellement favorable ; il ne mesure pas directement le fonctionnement de l’arbre.</p></article>
+        <article class="method-card">
+          <h3>Prévisions météo</h3>
+          <p>Les prévisions de température, pluie, humidité et vent sont récupérées pour la position sélectionnée et présentées sur les 7 prochains jours.</p>
+        </article>
+        <article class="method-card">
+          <h3>Déficit climatique</h3>
+          <p>Calcul journalier ET₀ − pluie, cumulé sur la période sélectionnée. Le bilan peut devenir négatif lorsque les pluies cumulées dépassent l’ET₀.</p>
+        </article>
+        <article class="method-card">
+          <h3>DPV</h3>
+          <p>Calculé à partir de la température et de l’humidité relative horaires. La zone de conditions favorables est fixée entre 0,8 et 1,6 kPa.</p>
+        </article>
+        <article class="method-card">
+          <h3>Indice de contrainte</h3>
+          <p>40 % DPV maximal, 25 % durée avec DPV &gt; 2,5 kPa, 20 % température maximale et 15 % ET₀.</p>
+        </article>
+        <article class="method-card">
+          <h3>Heures de conditions favorables</h3>
+          <p>Une heure est comptée lorsque la température est comprise entre 18 et 30 °C, le DPV entre 0,8 et 1,6 kPa et le rayonnement supérieur à 100 W/m².</p>
+        </article>
       </div>
-      <div class="alert-card alert-red">
-  <strong>À savoir</strong>
-  <p>
-    L'indice de contrainte et les heures de conditions favorables sont des
-    indicateurs d'aide à l'interprétation développés par SudExpé. Ils permettent
-    d'obtenir une vision synthétique des conditions climatiques prévues, mais ne
-    constituent pas des modèles scientifiques validés. Ils doivent être utilisés
-    comme une aide à l'analyse, en complément des autres observations et outils
-    d'aide à la décision.
-  </p>
-</div>
+
+      <div class="warning-box method-warning">
+        <strong>À savoir :</strong> l’indice de contrainte et les heures de conditions favorables sont des indicateurs d’aide à l’interprétation. Ils permettent de se donner une idée synthétique des conditions climatiques prévues, mais ne constituent pas des modèles scientifiques validés.
+      </div>
     </section>
   </main>
 

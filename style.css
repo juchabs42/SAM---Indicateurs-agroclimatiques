@@ -4,7 +4,7 @@
 }
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--background);line-height:1.55}
 button,select,input{font:inherit}button{cursor:pointer}.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:24px;min-height:76px;padding:12px clamp(18px,4vw,56px);color:#fff;background:linear-gradient(120deg,var(--sam-dark),var(--sam));box-shadow:0 4px 18px rgba(68,11,21,.2)}
-.brand{display:flex;align-items:center;gap:12px;min-width:max-content}.brand-mark{display:flex;align-items:center;justify-content:center;width:96px;height:44px;overflow:hidden}.brand-mark img{display:block;max-width:100%;max-height:42px;object-fit:contain}.brand-kicker{margin:0;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;opacity:.8}.brand h1{margin:1px 0 0;font-size:1.1rem}
+.brand{display:flex;align-items:center;gap:12px;min-width:max-content}.brand-mark{display:flex;align-items:center;justify-content:center;width:96px;height:46px;overflow:hidden;border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.12)}.brand-mark img{display:block;width:100%;height:100%;object-fit:cover;border-radius:10px}.brand-kicker{margin:0;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;opacity:.8}.brand h1{margin:1px 0 0;font-size:1.1rem}
 .main-nav{display:flex;gap:4px;margin-left:auto}.nav-link,.menu-button{border:0;color:inherit;background:transparent}.nav-link{padding:10px;border-radius:10px;font-size:.85rem}.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.16)}.menu-button{display:none;margin-left:auto;padding:8px 12px;border:1px solid rgba(255,255,255,.4);border-radius:9px}
 main{width:min(1220px,calc(100% - 32px));margin:auto;padding:28px 0 48px}.page-section{display:none}.page-section.active{display:block}
 .location-panel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;margin-bottom:28px;padding:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}.location-panel h2{margin:3px 0;font-size:1.3rem}.location-panel p{margin:0;color:var(--muted)}.location-actions{display:flex;gap:10px}.manual-form{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:end;gap:12px;padding-top:16px;border-top:1px solid var(--line)}.manual-form.hidden,.loading-panel.hidden{display:none}.manual-form label{display:grid;gap:5px;font-size:.8rem;font-weight:700;color:var(--muted)}.status-message{grid-column:1/-1;min-height:20px;color:var(--sam);font-size:.85rem;font-weight:700}
@@ -30,17 +30,56 @@ footer{display:flex;justify-content:space-between;gap:20px;padding:24px clamp(18
 .swatch-red{background:#d64541}
 .swatch-purple{background:#533483}
 
-/* Version nettoyée sans module irrigation */
-.summary-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+
+
+/* Prévisions météo */
+.dashboard-summary-grid{
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
 }
-@media (max-width: 1050px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.weather-forecast-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:12px;
+  margin:20px 0;
 }
-@media (max-width: 720px) {
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
+.weather-card{
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+.weather-card .weather-day{
+  display:block;
+  color:var(--sam);
+  font-size:.78rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.weather-card strong{
+  display:block;
+  margin:5px 0 8px;
+  font-size:1.25rem;
+}
+.weather-card .weather-detail{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+  font-size:.78rem;
+}
+.weather-chart-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+.method-warning{
+  margin-top:22px;
+}
+@media(max-width:1050px){
+  .weather-forecast-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:720px){
+  .dashboard-summary-grid,.weather-forecast-grid,.weather-chart-grid{grid-template-columns:1fr}
 }
