@@ -118,10 +118,20 @@
     <section id="meteo" class="page-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">7 prochains jours</p>
+          <p class="eyebrow">Prévisions</p>
           <h2>Prévisions météo</h2>
           <p>Températures, pluie, humidité et vent prévus à la position sélectionnée.</p>
         </div>
+      </div>
+
+      <div class="controls compact-controls">
+        <label>Nombre de jours à afficher
+          <select id="weatherDays">
+            <option value="3">3 jours</option>
+            <option value="5">5 jours</option>
+            <option value="7" selected>7 jours</option>
+          </select>
+        </label>
       </div>
 
       <div id="weatherCards" class="weather-forecast-grid"></div>
@@ -217,6 +227,16 @@
           <h2>Indice de contrainte journalier</h2>
           <p>Score de 0 à 100 combinant l’intensité du DPV, la durée de forte demande atmosphérique, la durée de forte chaleur et l’ET₀.</p>
         </div>
+      </div>
+
+      <div class="controls compact-controls">
+        <label>Nombre de jours à afficher
+          <select id="scoreDays">
+            <option value="3">3 jours</option>
+            <option value="5">5 jours</option>
+            <option value="7" selected>7 jours</option>
+          </select>
+        </label>
       </div>
 
       <div class="score-legend">

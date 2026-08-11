@@ -1,4 +1,4 @@
-const CACHE_NAME='sam-agroclimat-v1';
+const CACHE_NAME = "sud-agro-meteo-v2";
 const APP_SHELL=[
  './',
  './index.html',

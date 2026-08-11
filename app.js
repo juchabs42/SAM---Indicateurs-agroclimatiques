@@ -11,6 +11,9 @@ Chart.register(vpdBandsPlugin);
 function fmt(v,d=1){return Number.isFinite(v)?v.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—"}
 function dateLabel(iso){return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(iso))}
 function dayLabel(iso){return new Intl.DateTimeFormat("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"}).format(new Date(`${iso}T12:00:00`))}
+function axisDayLabel(iso){
+ return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"2-digit"}).format(new Date(`${iso}T12:00:00`));
+}
 function dayOnlyXAxis(rows){
  return{
   grid:{display:false},
@@ -22,7 +25,7 @@ function dayOnlyXAxis(rows){
     if(!row)return "";
     const current=row.time.slice(0,10);
     const previous=index>0?rows[index-1].time.slice(0,10):"";
-    return index===0||current!==previous?dayLabel(current):"";
+    return index===0||current!==previous?axisDayLabel(current):"";
    }
   }
  };
@@ -142,7 +145,7 @@ function renderDashboard(){
  todayScore.textContent=`${today.score}/100`;
  todayScoreLabel.textContent=scoreLabel(today.score);
 
- destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:next3.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:next3.map(d=>d.score),backgroundColor:next3.map(d=>d.score<25
+ destroy("dashScore");state.charts.dashScore=new Chart(dashboardScoreChart,{type:"bar",data:{labels:next3.map(d=>axisDayLabel(d.date)),datasets:[{label:"Indice /100",data:next3.map(d=>d.score),backgroundColor:next3.map(d=>d.score<25
 ?"rgba(72,149,239,.75)"
 :d.score<50
 ?"rgba(82,183,136,.75)"
@@ -155,7 +158,10 @@ function renderDashboard(){
 }
 
 function renderWeather(){
- const days=weatherForecastDays(),hours=futureHours(168);
+ const numberOfDays=Number(weatherDays.value)||7;
+ const days=weatherForecastDays().slice(0,numberOfDays);
+ const dateSet=new Set(days.map(d=>d.date));
+ const hours=state.hourly.filter(x=>dateSet.has(x.time.slice(0,10)));
  if(!days.length||!hours.length)return;
  weatherCards.innerHTML=days.map(d=>`<article class="weather-card">
    <span class="weather-day">${dayLabel(d.date)}</span>
@@ -177,7 +183,7 @@ function renderWeather(){
  destroy("rainForecast");
  state.charts.rainForecast=new Chart(rainForecastChart,{
    type:"bar",
-   data:{labels:days.map(d=>dayLabel(d.date)),datasets:[{label:"Pluie",data:days.map(d=>d.rain),backgroundColor:"rgba(72,149,239,.75)",borderRadius:5}]},
+   data:{labels:days.map(d=>axisDayLabel(d.date)),datasets:[{label:"Pluie",data:days.map(d=>d.rain),backgroundColor:"rgba(72,149,239,.75)",borderRadius:5}]},
    options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,title:{display:true,text:"Pluie journalière (mm)"},grid:{color:"rgba(101,114,126,.13)"}}}}
  });
 
@@ -204,8 +210,9 @@ function renderVpd(){
 }
 
 function renderScore(){
- const fd=forecastDays().map(scoreDay);
- destroy("score");state.charts.score=new Chart(scoreChart,{type:"bar",data:{labels:fd.map(d=>dayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
+ const numberOfDays=Number(scoreDays.value)||7;
+ const fd=forecastDays().slice(0,numberOfDays).map(scoreDay);
+ destroy("score");state.charts.score=new Chart(scoreChart,{type:"bar",data:{labels:fd.map(d=>axisDayLabel(d.date)),datasets:[{label:"Indice /100",data:fd.map(d=>d.score),backgroundColor:fd.map(d=>d.score<25
 ?"rgba(72,149,239,.75)"
 :d.score<50
 ?"rgba(82,183,136,.75)"
@@ -229,7 +236,7 @@ function computeDeficit(days){
 function renderDeficit(){
  const days=Number(deficitPeriod.value),rows=computeDeficit(pastDays(days));if(!rows.length)return;const et0=rows.reduce((s,d)=>s+d.et0,0),rain=rows.reduce((s,d)=>s+d.rain,0),last=rows.at(-1).cumulative,week=rows.slice(-7).reduce((s,d)=>s+d.et0-d.rain,0);
  et0Total.textContent=`${fmt(et0)} mm`;rainTotal.textContent=`${fmt(rain)} mm`;deficitTotal.textContent=`${fmt(last)} mm`;deficitWeekChange.textContent=`${week>=0?"+":""}${fmt(week)} mm`;
- destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>dayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",beginAtZero:false,grid:{drawOnChartArea:false}}}}})
+ destroy("deficit");state.charts.deficit=new Chart(deficitChart,{data:{labels:rows.map(d=>axisDayLabel(d.date)),datasets:[{type:"bar",label:"ET₀",data:rows.map(d=>d.et0),backgroundColor:"rgba(168,101,22,.62)",yAxisID:"daily"},{type:"bar",label:"Pluie",data:rows.map(d=>d.rain),backgroundColor:"rgba(63,111,147,.62)",yAxisID:"daily"},{type:"line",label:"Bilan cumulé",data:rows.map(d=>d.cumulative),borderColor:"#7f1d2d",yAxisID:"cum",tension:.2}]},options:{...chartBase,scales:{x:chartBase.scales.x,daily:{beginAtZero:true,position:"left"},cum:{position:"right",beginAtZero:false,grid:{drawOnChartArea:false}}}}})
 }
 function renderAll(){renderDashboard();renderWeather();renderDeficit();renderVpd();renderScore()}
 
@@ -270,4 +277,4 @@ function initPwa(){
  window.addEventListener('online',()=>{if(appMessage)appMessage.textContent='Connexion Internet rétablie.'});
 }
 
-document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();initPwa();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})
+document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();initPwa();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;weatherDays.onchange=renderWeather;scoreDays.onchange=renderScore;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})

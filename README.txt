@@ -77,3 +77,11 @@ Cette version peut être installée depuis GitHub Pages comme une application.
 - Les fichiers statiques sont mis en cache par un service worker. Une connexion Internet reste nécessaire pour actualiser les données météo.
 
 Fichiers PWA supplémentaires : manifest.webmanifest, service-worker.js, icon-192.png, icon-512.png, apple-touch-icon.png.
+
+
+MISE À JOUR MOBILE V2
+---------------------
+- Prévisions météo : choix de 3, 5 ou 7 jours.
+- Indice de contrainte : choix de 3, 5 ou 7 jours.
+- Sur tous les graphiques, les dates de l’axe X sont affichées sous la forme JJ/MM, sans nom du jour.
+- Les cartes météo conservent leur libellé de jour détaillé.

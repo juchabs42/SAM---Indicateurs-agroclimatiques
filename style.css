@@ -169,3 +169,22 @@ button{touch-action:manipulation}
   .nav-link{min-width:96px}
   .chart-wrap,.chart-wrap.large{min-height:250px;height:250px}
 }
+
+/* Sélecteurs de période */
+.compact-controls{
+  width:max-content;
+  max-width:100%;
+  margin:12px 0 18px;
+}
+.compact-controls label{
+  min-width:190px;
+}
+@media(max-width:720px){
+  .compact-controls{
+    width:100%;
+  }
+  .compact-controls label,
+  .compact-controls select{
+    width:100%;
+  }
+}
