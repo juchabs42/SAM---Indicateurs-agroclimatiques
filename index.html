@@ -2,10 +2,16 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Sud Agro Météo : indicateurs agroclimatiques.">
-  <meta name="theme-color" content="#7f1d2d">
+  <meta name="theme-color" content="#e1064b">
   <title>Indicateurs agroclimatiques — Sud Agro Météo</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sud Agro Météo">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -41,6 +47,7 @@
       <div class="location-actions">
         <button id="geolocateButton" class="primary-button">Trouver ma position</button>
         <button id="manualButton" class="secondary-button">Saisir des coordonnées</button>
+        <button id="installButton" class="install-button" type="button" hidden>Installer l’application</button>
       </div>
       <form id="manualLocationForm" class="manual-form hidden">
         <label>Latitude<input id="latitudeInput" type="number" step="0.0001" value="43.6077" required></label>
@@ -48,6 +55,7 @@
         <button class="primary-button" type="submit">Charger</button>
       </form>
       <div id="locationMessage" class="status-message"></div>
+      <div id="appMessage" class="app-message" aria-live="polite"></div>
     </section>
 
     <div id="loadingPanel" class="loading-panel hidden">
@@ -207,7 +215,7 @@
         <div>
           <p class="eyebrow">Synthèse prévisionnelle</p>
           <h2>Indice de contrainte journalier</h2>
-          <p>Score de 0 à 100 combinant le DPV, la durée de contrainte, la température maximale et l’ET₀.</p>
+          <p>Score de 0 à 100 combinant l’intensité du DPV, la durée de forte demande atmosphérique, la durée de forte chaleur et l’ET₀.</p>
         </div>
       </div>
 
@@ -246,7 +254,7 @@
         </article>
         <article class="method-card">
           <h3>Indice de contrainte</h3>
-          <p>40 % DPV maximal, 25 % durée avec DPV &gt; 2,5 kPa, 20 % température maximale et 15 % ET₀.</p>
+          <p>40 % intensité du DPV (moyenne des 3 heures présentant les DPV les plus élevés), 30 % durée avec DPV &gt; 2,5 kPa, 20 % durée de forte chaleur avec température &gt; 35 °C et 10 % ET₀.</p>
         </article>
       </div>
 

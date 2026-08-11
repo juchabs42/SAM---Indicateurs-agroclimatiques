@@ -57,3 +57,23 @@ MISE À JOUR VUE D’ENSEMBLE ET MÉTÉO
 - Graphiques météo désormais horaires : température, pluie, humidité relative et vent.
 - Méthodes limitées à Prévisions météo, Déficit climatique, DPV et Indice de contrainte.
 - L’avertissement méthodologique concerne uniquement l’indice de contrainte.
+
+
+MISE À JOUR INDICE ET AXES TEMPORELS
+------------------------------------
+- Indice de contrainte : 40 % intensité DPV (moyenne des 3 heures les plus élevées), 30 % durée DPV > 2,5 kPa, 20 % durée > 35 °C, 10 % ET0.
+- Sous-score chaleur : 0 h = 0 ; 1–2 h = 25 ; 3–5 h = 50 ; 6–8 h = 75 ; > 8 h = 100.
+- Les courbes horaires conservent les données heure par heure mais l’axe X n’affiche que les changements de jour.
+- La pluie prévisionnelle est affichée en histogramme journalier.
+
+
+VERSION MOBILE / INSTALLABLE (PWA)
+----------------------------------
+Cette version peut être installée depuis GitHub Pages comme une application.
+- Android / Chrome : utiliser le bouton « Installer l’application » ou le menu du navigateur.
+- iPhone / Safari : Partager > Sur l’écran d’accueil.
+- La navigation devient une barre tactile en bas de l’écran sur mobile.
+- Les cartes météo et les cartes de l’indice se parcourent horizontalement.
+- Les fichiers statiques sont mis en cache par un service worker. Une connexion Internet reste nécessaire pour actualiser les données météo.
+
+Fichiers PWA supplémentaires : manifest.webmanifest, service-worker.js, icon-192.png, icon-512.png, apple-touch-icon.png.
