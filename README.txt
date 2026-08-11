@@ -46,3 +46,14 @@ Settings > Pages > Deploy from a branch > main > root.
 NOTE
 ----
 L’indice de contrainte et les heures de conditions favorables sont des indicateurs d’aide à l’interprétation. Ils ne constituent pas des modèles scientifiques validés.
+
+
+MISE À JOUR VUE D’ENSEMBLE ET MÉTÉO
+----------------------------------
+- Vue d’ensemble : Prévision aujourd’hui, ET0 aujourd’hui, DPV maximal aujourd’hui, Indice de contrainte aujourd’hui.
+- Graphique de l’indice de contrainte limité aux 3 prochains jours.
+- DPV horaire conservé sur 48 heures.
+- Cartes météo quotidiennes conservées sur 7 jours.
+- Graphiques météo désormais horaires : température, pluie, humidité relative et vent.
+- Méthodes limitées à Prévisions météo, Déficit climatique, DPV et Indice de contrainte.
+- L’avertissement méthodologique concerne uniquement l’indice de contrainte.
