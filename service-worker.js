@@ -1,17 +1,14 @@
-const CACHE_NAME = "sam-indic-v4";
+const CACHE_NAME = "sam-indic-v8-double-logo";
 const APP_SHELL=[
  "./",
  "./index.html",
  "./style.css",
  "./app.js",
  "./manifest.webmanifest",
- "./logo-sudexpe.jpg",
+ "./logo-sudexpe.png",
  "./icon-192.png",
  "./icon-512.png",
  "./apple-touch-icon.png",
- "./favicon-32.png",
- "./favicon-16.png",
- "./favicon.ico",
  "./app-icon.png"
 ];
 
