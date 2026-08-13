@@ -53,6 +53,47 @@ async function fetchNearestCity(lat,lon){
  }
 }
 
+async function searchFrenchPlaces(query){
+ const params=new URLSearchParams({
+  name:query.trim(),
+  count:"8",
+  language:"fr",
+  countryCode:"FR",
+  format:"json"
+ });
+ const data=await fetchJson(`https://geocoding-api.open-meteo.com/v1/search?${params}`);
+ return Array.isArray(data.results)?data.results:[];
+}
+
+function renderPlaceResults(results){
+ const container=document.getElementById("placeSearchResults");
+ container.innerHTML="";
+ if(!results.length){
+  const empty=document.createElement("p");
+  empty.className="place-search-empty";
+  empty.textContent="Aucun lieu trouvé en France.";
+  container.appendChild(empty);
+  return;
+ }
+ results.forEach(result=>{
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="place-result";
+  const name=document.createElement("strong");
+  name.textContent=result.name;
+  const details=document.createElement("span");
+  const parts=[result.postcodes?.[0],result.admin2,result.admin1].filter(Boolean);
+  details.textContent=parts.join(" · ");
+  button.append(name,details);
+  button.addEventListener("click",()=>{
+   loadLocation(Number(result.latitude),Number(result.longitude),result.name,result.name);
+   document.getElementById("placeSearchForm").classList.add("hidden");
+   container.innerHTML="";
+  });
+  container.appendChild(button);
+ });
+}
+
 function currentIndex(){const now=Date.now();let best=0,gap=Infinity;state.hourly.forEach((x,i)=>{const g=Math.abs(new Date(x.time)-now);if(g<gap){gap=g;best=i}});return best}
 function futureHours(n){const i=currentIndex();return state.hourly.slice(i,i+n)}
 function forecastDays(){const now=new Date();now.setHours(0,0,0,0);return state.daily.filter(d=>new Date(`${d.date}T12:00:00`)>=now).slice(0,7)}
@@ -111,19 +152,57 @@ function initNav(){
  if(btn)btn.addEventListener("click",()=>menu.classList.toggle("open"));
 }
 function initLocation(){
- const form=document.getElementById("manualLocationForm");
- document.getElementById("manualButton").onclick=()=>form.classList.toggle("hidden");
- form.onsubmit=e=>{e.preventDefault();loadLocation(Number(latitudeInput.value),Number(longitudeInput.value),"Position saisie manuellement")};
- document.getElementById("geolocateButton").onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>loadLocation(p.coords.latitude,p.coords.longitude,"Ma position"),()=>locationMessage.textContent="Localisation impossible. Utilisez la saisie manuelle."):locationMessage.textContent="Géolocalisation indisponible."
+ const form=document.getElementById("placeSearchForm");
+ const input=document.getElementById("placeSearchInput");
+ const results=document.getElementById("placeSearchResults");
+ const searchButton=document.getElementById("placeSearchButton");
+ const geolocateButton=document.getElementById("geolocateButton");
+ const message=document.getElementById("locationMessage");
+
+ searchButton.addEventListener("click",()=>{
+  form.classList.toggle("hidden");
+  if(!form.classList.contains("hidden"))input.focus();
+ });
+
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  const query=input.value.trim();
+  if(query.length<2){
+   message.textContent="Saisissez au moins 2 caractères.";
+   return;
+  }
+  message.textContent="Recherche du lieu…";
+  results.innerHTML="";
+  try{
+   const places=await searchFrenchPlaces(query);
+   renderPlaceResults(places);
+   message.textContent=places.length?"Sélectionnez un lieu dans la liste.":"Aucun lieu trouvé en France.";
+  }catch(error){
+   message.textContent=`Impossible de rechercher ce lieu : ${error.message}`;
+  }
+ });
+
+ geolocateButton.addEventListener("click",()=>{
+  if(!navigator.geolocation){
+   message.textContent="Géolocalisation indisponible.";
+   return;
+  }
+  message.textContent="Recherche de votre position…";
+  navigator.geolocation.getCurrentPosition(
+   position=>loadLocation(position.coords.latitude,position.coords.longitude,"Position actuelle"),
+   ()=>message.textContent="Localisation impossible. Vous pouvez rechercher un lieu en France."
+  );
+ });
 }
-async function loadLocation(lat,lon,label){
- loadingPanel.classList.remove("hidden");locationMessage.textContent="";
+async function loadLocation(lat,lon,label,placeOverride=""){
+ loadingPanel.classList.remove("hidden");
+ locationMessage.textContent="";
  try{
   const r=await fetchWeather(lat,lon);
-  const place=await fetchNearestCity(lat,lon);
+  const place=placeOverride||await fetchNearestCity(lat,lon);
   state.hourly=r.hourly;state.daily=r.daily;state.label=label;state.place=place;
-  locationTitle.textContent="Ma position";
-  locationDetails.textContent=`${place?`Ville la plus proche : ${place} · `:""}Latitude ${fmt(lat,4)} · longitude ${fmt(lon,4)} · altitude ${fmt(r.elevation,0)} m`;
+  locationTitle.textContent="Localisation";
+  locationDetails.textContent=`Position : ${place||"non déterminée"} · altitude ${fmt(r.elevation,0)} m`;
   locationMessage.textContent="Données actualisées.";
   renderAll();
  }

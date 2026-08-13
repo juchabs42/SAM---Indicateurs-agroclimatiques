@@ -85,3 +85,13 @@ MISE À JOUR MOBILE V2
 - Indice de contrainte : choix de 3, 5 ou 7 jours.
 - Sur tous les graphiques, les dates de l’axe X sont affichées sous la forme JJ/MM, sans nom du jour.
 - Les cartes météo conservent leur libellé de jour détaillé.
+
+
+MISE À JOUR SAM indic.
+----------------------
+- Nom de l’application installée : SAM indic.
+- Nouvelle icône téléphone : pommier + soleil/nuage + pluie, sans texte.
+- Localisation simplifiée : affichage « Position : lieu · altitude » sans latitude/longitude.
+- Boutons : « Trouver ma position » et « Chercher un lieu ».
+- Recherche de ville, commune ou code postal limitée à la France via Open-Meteo Geocoding.
+- Service worker passé en stratégie network-first pour que les mises à jour GitHub apparaissent plus facilement sur téléphone.
