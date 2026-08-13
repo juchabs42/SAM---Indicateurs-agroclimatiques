@@ -1,4 +1,4 @@
-const CACHE_NAME = "sam-indic-v3";
+const CACHE_NAME = "sam-indic-v4";
 const APP_SHELL=[
  "./",
  "./index.html",
@@ -9,6 +9,9 @@ const APP_SHELL=[
  "./icon-192.png",
  "./icon-512.png",
  "./apple-touch-icon.png",
+ "./favicon-32.png",
+ "./favicon-16.png",
+ "./favicon.ico",
  "./app-icon.png"
 ];
 
