@@ -1,19 +1,18 @@
-FICHIERS À REMPLACER POUR ALIGNER LE LOGO SUR SAM PHÉNO
-==========================================================
+FICHIERS À REMPLACER
+====================
 
-Remplace ces fichiers dans ton dépôt GitHub :
+Remplace seulement ces fichiers à la racine du dépôt GitHub :
 - index.html
 - style.css
 - service-worker.js
-- logo-sudexpe-header.png
+- app-icon.png
+- icon-192.png
+- icon-512.png
+- apple-touch-icon.png
 
-Ce qui a été corrigé :
-- même gabarit de bandeau rouge que SAM Phéno ;
-- même encart blanc de logo ;
-- logo SudExpé préparé dans un fichier PNG propre avec marges, pour retrouver le même rendu visuel.
+Modifications :
+- nouveau logo SAM ;
+- toujours placé à droite du logo SudExpé ;
+- texte du bandeau : "SAM Indicateurs agroclimatiques".
 
-Après envoi :
-1. attends le redéploiement GitHub Pages ;
-2. recharge sur ordinateur avec Ctrl + F5 ;
-3. sur téléphone, ferme/réouvre l’application ;
-4. si le vieux bandeau reste, supprime puis réinstalle l’application.
+Le changement de cache dans service-worker.js aide la mise à jour sur téléphone.

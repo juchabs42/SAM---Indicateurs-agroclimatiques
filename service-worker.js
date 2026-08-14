@@ -1,4 +1,4 @@
-const CACHE_NAME = "sam-indic-v8-double-logo";
+const CACHE_NAME = "sam-indic-v9-new-sam-logo";
 const APP_SHELL=[
  "./",
  "./index.html",
