@@ -108,7 +108,20 @@ button{touch-action:manipulation}
   .app-mark{width:44px;height:42px;padding:5px}
   .brand-mark img{object-fit:contain}
   .brand-kicker{display:none}
-  .brand-copy h1{font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand-copy{
+    min-width:0;
+    flex:1;
+  }
+
+  .brand-copy h1{
+    margin:0;
+    font-size:.92rem;
+    line-height:1.15;
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    max-width:170px;
+  }
   .menu-button{display:none!important}
 
   .main-nav{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:70;display:flex!important;align-items:stretch;gap:2px;min-width:0;margin:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom));overflow-x:auto;overscroll-behavior-x:contain;background:rgba(179,4,61,.98);border-radius:0;box-shadow:0 -5px 20px rgba(31,41,51,.16);scroll-snap-type:x proximity}
