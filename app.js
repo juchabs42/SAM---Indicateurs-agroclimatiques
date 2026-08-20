@@ -1,5 +1,5 @@
 const DEFAULT_LOCATION={latitude:43.6077,longitude:4.0122,label:"Ma position"};
-const state={hourly:[],daily:[],charts:{},label:"",place:""};
+const state={hourly:[],daily:[],charts:{},label:"",place:"",selectedWeatherDate:null};
 
 const chartBase={responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,padding:18}},vpdBands:{enabled:false}},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{beginAtZero:true,grid:{color:"rgba(101,114,126,.13)"}}}};
 
@@ -26,6 +26,21 @@ function dayOnlyXAxis(rows){
     const current=row.time.slice(0,10);
     const previous=index>0?rows[index-1].time.slice(0,10):"";
     return index===0||current!==previous?axisDayLabel(current):"";
+   }
+  }
+ };
+}
+function selectedDayXAxis(){
+ return{
+  grid:{display:false},
+  ticks:{
+   maxRotation:0,
+   autoSkip:true,
+   maxTicksLimit:9,
+   callback(value){
+    const label=this.getLabelForValue(value);
+    const match=String(label).match(/(\d{2}):(\d{2})$/);
+    return match?`${match[1]} h`:"";
    }
   }
  };
@@ -239,45 +254,74 @@ function renderDashboard(){
 function renderWeather(){
  const numberOfDays=Number(weatherDays.value)||7;
  const days=weatherForecastDays().slice(0,numberOfDays);
- const dateSet=new Set(days.map(d=>d.date));
- const hours=state.hourly.filter(x=>dateSet.has(x.time.slice(0,10)));
- if(!days.length||!hours.length)return;
- weatherCards.innerHTML=days.map(d=>`<article class="weather-card">
+ if(!days.length)return;
+
+ if(state.selectedWeatherDate&&!days.some(d=>d.date===state.selectedWeatherDate)){
+  state.selectedWeatherDate=null;
+ }
+
+ weatherCards.innerHTML=days.map(d=>{
+  const selected=d.date===state.selectedWeatherDate;
+  return `<button type="button" class="weather-card weather-card-button${selected?" selected":""}" data-weather-date="${d.date}" aria-pressed="${selected}">
    <span class="weather-day">${dayLabel(d.date)}</span>
    <strong>${fmt(d.tmin)}–${fmt(d.tmax)} °C</strong>
    <span class="weather-detail">Pluie : ${fmt(d.rain)} mm</span>
    <span class="weather-detail">Humidité moy. : ${fmt(d.humidityMean,0)} %</span>
    <span class="weather-detail">Vent moy. : ${fmt(d.windMean)} km/h</span>
    <span class="weather-detail">Vent max : ${fmt(d.windMax)} km/h</span>
- </article>`).join("");
+  </button>`;
+ }).join("");
+
+ weatherCards.querySelectorAll("[data-weather-date]").forEach(card=>{
+  card.addEventListener("click",()=>{
+   const date=card.dataset.weatherDate;
+   state.selectedWeatherDate=state.selectedWeatherDate===date?null:date;
+   renderWeather();
+  });
+ });
+
+ const selectedDay=state.selectedWeatherDate?days.find(d=>d.date===state.selectedWeatherDate):null;
+ const periodDates=new Set(days.map(d=>d.date));
+ const hours=selectedDay?hourlyForDay(selectedDay.date):state.hourly.filter(x=>periodDates.has(x.time.slice(0,10)));
+ if(!hours.length)return;
 
  const labels=hours.map(x=>dateLabel(x.time));
+ const xAxis=selectedDay?selectedDayXAxis():dayOnlyXAxis(hours);
+
  destroy("temperature");
  state.charts.temperature=new Chart(temperatureChart,{
-   type:"line",
-   data:{labels,datasets:[{label:"Température",data:hours.map(x=>x.temperature),borderColor:"#e1064b",backgroundColor:"#e1064b",tension:.2,pointRadius:0,borderWidth:2}]},
-   options:{...chartBase,scales:{x:dayOnlyXAxis(hours),y:{beginAtZero:false,title:{display:true,text:"Température (°C)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+  type:"line",
+  data:{labels,datasets:[{label:selectedDay?`Température horaire — ${axisDayLabel(selectedDay.date)}`:"Température",data:hours.map(x=>x.temperature),borderColor:"#e1064b",backgroundColor:"#e1064b",tension:.2,pointRadius:selectedDay?2:0,borderWidth:2}]},
+  options:{...chartBase,scales:{x:xAxis,y:{beginAtZero:false,title:{display:true,text:"Température (°C)"},grid:{color:"rgba(101,114,126,.13)"}}}}
  });
 
  destroy("rainForecast");
- state.charts.rainForecast=new Chart(rainForecastChart,{
+ if(selectedDay){
+  state.charts.rainForecast=new Chart(rainForecastChart,{
+   type:"bar",
+   data:{labels,datasets:[{label:`Pluie horaire — ${axisDayLabel(selectedDay.date)}`,data:hours.map(x=>x.rain),backgroundColor:"rgba(72,149,239,.75)",borderRadius:3}]},
+   options:{...chartBase,scales:{x:selectedDayXAxis(),y:{beginAtZero:true,title:{display:true,text:"Pluie horaire (mm)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+  });
+ }else{
+  state.charts.rainForecast=new Chart(rainForecastChart,{
    type:"bar",
    data:{labels:days.map(d=>axisDayLabel(d.date)),datasets:[{label:"Pluie",data:days.map(d=>d.rain),backgroundColor:"rgba(72,149,239,.75)",borderRadius:5}]},
    options:{...chartBase,scales:{x:chartBase.scales.x,y:{beginAtZero:true,title:{display:true,text:"Pluie journalière (mm)"},grid:{color:"rgba(101,114,126,.13)"}}}}
- });
+  });
+ }
 
  destroy("humidity");
  state.charts.humidity=new Chart(humidityChart,{
-   type:"line",
-   data:{labels,datasets:[{label:"Humidité relative",data:hours.map(x=>x.humidity),borderColor:"#52b788",backgroundColor:"#52b788",tension:.2,pointRadius:0,borderWidth:2}]},
-   options:{...chartBase,scales:{x:dayOnlyXAxis(hours),y:{beginAtZero:true,max:100,title:{display:true,text:"Humidité relative (%)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+  type:"line",
+  data:{labels,datasets:[{label:selectedDay?`Humidité horaire — ${axisDayLabel(selectedDay.date)}`:"Humidité relative",data:hours.map(x=>x.humidity),borderColor:"#52b788",backgroundColor:"#52b788",tension:.2,pointRadius:selectedDay?2:0,borderWidth:2}]},
+  options:{...chartBase,scales:{x:xAxis,y:{beginAtZero:true,max:100,title:{display:true,text:"Humidité relative (%)"},grid:{color:"rgba(101,114,126,.13)"}}}}
  });
 
  destroy("wind");
  state.charts.wind=new Chart(windChart,{
-   type:"line",
-   data:{labels,datasets:[{label:"Vent",data:hours.map(x=>x.wind),borderColor:"#65727e",backgroundColor:"#65727e",tension:.2,pointRadius:0,borderWidth:2}]},
-   options:{...chartBase,scales:{x:dayOnlyXAxis(hours),y:{beginAtZero:true,title:{display:true,text:"Vent (km/h)"},grid:{color:"rgba(101,114,126,.13)"}}}}
+  type:"line",
+  data:{labels,datasets:[{label:selectedDay?`Vent horaire — ${axisDayLabel(selectedDay.date)}`:"Vent",data:hours.map(x=>x.wind),borderColor:"#65727e",backgroundColor:"#65727e",tension:.2,pointRadius:selectedDay?2:0,borderWidth:2}]},
+  options:{...chartBase,scales:{x:xAxis,y:{beginAtZero:true,title:{display:true,text:"Vent (km/h)"},grid:{color:"rgba(101,114,126,.13)"}}}}
  });
 }
 
@@ -356,4 +400,4 @@ function initPwa(){
  window.addEventListener('online',()=>{if(appMessage)appMessage.textContent='Connexion Internet rétablie.'});
 }
 
-document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();initPwa();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;weatherDays.onchange=renderWeather;scoreDays.onchange=renderScore;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})
+document.addEventListener("DOMContentLoaded",()=>{initNav();initLocation();initPwa();vpdPeriod.onchange=renderVpd;deficitPeriod.onchange=renderDeficit;weatherDays.onchange=()=>{state.selectedWeatherDate=null;renderWeather()};scoreDays.onchange=renderScore;loadLocation(DEFAULT_LOCATION.latitude,DEFAULT_LOCATION.longitude,DEFAULT_LOCATION.label)})

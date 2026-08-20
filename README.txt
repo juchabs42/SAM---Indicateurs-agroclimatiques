@@ -1,19 +1,14 @@
-FICHIERS À REMPLACER POUR CORRIGER LES FAVICONS
-================================================
+FICHIERS À REMPLACER
+====================
 
 Remplace uniquement :
-- index.html
+- app.js
+- style.css
 - service-worker.js
-- favicon.ico
-- favicon-16.png
-- favicon-32.png
-- favicon-48.png
-- favicon-64.png
 
-Les favicons utilisent maintenant le nouveau logo SAM.
-
-Après GitHub Pages :
-1. attends le déploiement ;
-2. ferme l’onglet du site ;
-3. rouvre-le ;
-4. si l’ancienne icône reste, fais Ctrl + F5 sur ordinateur.
+Fonctionnement :
+- sans sélection : graphiques sur 3/5/7 jours et pluie en histogramme journalier ;
+- appui sur une carte météo : graphiques température, humidité et vent sur les 24 heures de cette journée ;
+- pluie : histogramme horaire uniquement pour la journée sélectionnée ;
+- la carte sélectionnée est entourée en rouge ;
+- appuie une deuxième fois sur la même carte pour revenir à la vue globale.

@@ -262,3 +262,27 @@ button{touch-action:manipulation}
 .place-search-empty{
   margin:4px 0;
 }
+
+/* Cartes météo interactives */
+.weather-card-button{
+  appearance:none;
+  -webkit-appearance:none;
+  width:100%;
+  font:inherit;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease,background .16s ease;
+}
+.weather-card-button:hover{border-color:rgba(211,17,69,.45)}
+.weather-card-button:focus-visible{outline:3px solid rgba(211,17,69,.22);outline-offset:2px}
+.weather-card-button.selected{
+  border-color:var(--sam);
+  background:var(--sam-light);
+  box-shadow:0 0 0 2px rgba(211,17,69,.10),var(--shadow);
+  transform:translateY(-1px);
+}
+.weather-card-button.selected .weather-day{color:var(--sam)}
+@media(max-width:720px){
+  .weather-card-button{min-height:100%;-webkit-tap-highlight-color:transparent}
+}

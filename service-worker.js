@@ -1,4 +1,4 @@
-const CACHE_NAME = "sam-indic-v10-favicon";
+const CACHE_NAME = "sam-indic-v11-weather-card-filter";
 const APP_SHELL=[
  "./",
  "./index.html",
